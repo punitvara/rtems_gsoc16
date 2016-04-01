@@ -23,14 +23,16 @@ volatile unsigned int *epwm_ptr[3]      ={NULL, NULL, NULL} ;
 
 void init(int subSystemNumber,float Frequency,bool UseDeadBand,unsigned int DeadBandTime);
 {
-
+/*
+on hold
+*/
 
 }
 void PWMSubSystemEnable(int subSytemNumber,bool EnableOrDisable);
 {
 volatile unsigned short *reg16;
 
-if (EnableOrDisable =1)
+if (EnableOrDisable = 1)
 {
 
 reg16 = (void*)epwm_ptr[subSystemNumber] + EPWM_AQCTLA;
@@ -155,10 +157,58 @@ the register is not shadowed.
 /* 
 
 */
-rtems_status_code SetDutyCycle(int subSystemNumber,float DutyCycle);
+rtems_status_code SetDutyCycle(int subSystemNumber,float HZ, float DutyCycleA, float DutyCycleB);
 {
+DutyCycleA /= 100.0f;
+DutyCycleB /= 100.0f;
 
+float cyclens = 0.0f;
+float divisor = 0;
+const float CLKDIV_div[] = {1.0 ,2.0 ,4.0 ,8.0 ,16.0 ,32.0 , 64.0 , 128.0};
+const float HSPCLKDIV_div[] ={1.0 ,2.0 ,4.0 ,6.0 ,8.0 ,10.0 , 12.0 , 14.0};
+int NearTBPRD = 0;
+int NearCLKDIV =7;
+int NearHSPCLKDIV =7;
 
+cyclens = 10000000000.0f / HZ; 
+
+divisor = (cyclens / 655350.0f );
+if(divisor > (128 * 14)) {
+printf("Frequency can't generate ");
+}
+ else {
+                /* using Exhaustive Attack metho */
+                for(i = 0 ; i < 8 ; i ++) {
+                        for(j = 0 ; j < 8 ; j ++) {
+                                if((CLKDIV_div[i] * HSPCLKDIV_div[j]) < (CLKDIV_div[NearCLKDIV] * HSPCLKDIV_div[NearHSPCLKDIV]) &&
+                                  ((CLKDIV_div[i] * HSPCLKDIV_div[j]) > Divisor)) {
+                                        NearCLKDIV = i ;
+                                        NearHSPCLKDIV = j ;
+                                }
+                        }
+                }
+}
+
+ NearTBPRD = (Cyclens / (10.0 *CLKDIV_div[NearCLKDIV] *HSPCLKDIV_div[NearHSPCLKDIV])) ;
+ /* setting clock diver and freeze time base */
+                reg16=(void*)epwm_ptr[subSystemNumber] +EPWM_TBCTL;
+                *reg16 = TBCTL_CTRMODE_FREEZE | (NearCLKDIV << 10) | (NearHSPCLKDIV << 7);
+
+                /*  setting dutycycle A and dutycycle B */
+                reg16=(void*)epwm_ptr[subSystemNumber] +EPWM_CMPB;
+                *reg16 =(unsigned short)((float)NearTBPRD * dutyB);
+
+                reg16=(void*)epwm_ptr[subSystemNumber] +EPWM_CMPA;
+                *reg16 =(unsigned short)((float)NearTBPRD * dutyA);
+
+                reg16=(void*)epwm_ptr[subSystemNumber] +EPWM_TBPRD;
+                *reg16 =(unsigned short)NearTBPRD;
+
+                /* reset time base counter */
+                reg16 = (void *)epwm_ptr[subSystemNumber] + EPWM_TBCNT;
+                *reg16 = 0;
+        }
+        return RTEMS_SUCCESSFUL;
 }
 
 
