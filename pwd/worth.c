@@ -188,8 +188,40 @@ the register is not shadowed.
 
 }
 /* 
-
+ *      
+ *
+ *      @param subSystemNumber  : EPWMSS number , 0~2
+ *      @param HZ         	: pluse HZ
+ *      @param dutyCycleA    	: Duty Cycle in ePWM A
+ *      @param dutyCycleB    : Duty Cycle in ePWM B
+ *
+ *      @return         : 1 for success , 0 for failed
+ *
+ *      @example        :  SetDutyCycle(0 , 50.0f , 50.0f , 25.0f);      // Generate 50HZ pwm in PWM0 ,
+ *                                                                              // duty cycle is 50% for ePWM0A , 25% for ePWM0B
+ *
+ *      @Note :
+ *              find an number nearst 65535 for TBPRD , to improve duty precision,
+ *
+ *              Using big TBPRD can increase the range of CMPA and CMPB ,
+ *              and it means we can get better precision on duty cycle.
+ *
+ *              EX : 20.25% duty cycle
+ *                  on TBPRD = 62500 , CMPA = 12656.25 ( .25 rejection) , real duty : 20.2496% (12656 /62500)
+ *                  on TBPRD = 6250  , CMPA = 1265.625 ( .625 rejection), real duty : 20.24%   (1265 6250)
+ *                  on TBPRD = 500   , CMPA = 101.25   ( .25 rejection) , real duty : 20.2%    (101/500)
+ *
+ *              Divisor = CLKDIV * HSPCLKDIV
+ *                      1 TBPRD : 10 ns (default)
+ *                      65535 TBPRD : 655350 ns
+ *                      65535 TBPRD : 655350 * Divisor ns  = X TBPRD : Cyclens
+ *
+ *              accrooding to that , we must find a Divisor value , let X nearest 65535 .
+ *              so , Divisor must  Nearest Cyclens/655350
 */
+ 
+
+
 rtems_status_code SetDutyCycle(int subSystemNumber,float HZ, float DutyCycleA, float DutyCycleB);
 {
 DutyCycleA /= 100.0f;
