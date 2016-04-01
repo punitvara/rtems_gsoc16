@@ -15,6 +15,39 @@
         HWREGB(((unsigned int)(x) & 0xF0000000) | 0x02000000 |               \
                (((unsigned int)(x) & 0x000FFFFF) << 5) | ((b) << 2))
 
+/* EPWM Registers */
+#define EHRPWM_TBCTL            (0x0)
+#define EHRPWM_TBSTS            (0x2)
+#define EHRPWM_TBPHSHR          (0x4)
+#define EHRPWM_TBPHS            (0x6)
+#define EHRPWM_TBCTR            (0x8)
+#define EHRPWM_TBPRD            (0xA)
+#define EHRPWM_CMPCTL           (0xE)
+#define EHRPWM_CMPAHR           (0x10)
+#define EHRPWM_CMPA             (0x12)
+#define EHRPWM_CMPB             (0x14)
+#define EHRPWM_AQCTLA           (0x16)
+#define EHRPWM_AQCTLB           (0x18)
+#define EHRPWM_AQSFRC           (0x1A)
+#define EHRPWM_AQCSFRC          (0x1C)
+#define EHRPWM_DBCTL            (0x1E)
+#define EHRPWM_DBRED            (0x20)
+#define EHRPWM_DBFED            (0x22)
+#define EHRPWM_TZSEL            (0x24)
+#define EHRPWM_TZCTL            (0x28)
+#define EHRPWM_TZEINT           (0x2A)
+#define EHRPWM_TZFLG            (0x2C)
+#define EHRPWM_TZCLR            (0x2E)
+#define EHRPWM_TZFRC            (0x30)
+#define EHRPWM_ETSEL            (0x32)
+#define EHRPWM_ETPS             (0x34)
+#define EHRPWM_ETFLG            (0x36)
+#define EHRPWM_ETCLR            (0x38)
+#define EHRPWM_ETFRC            (0x3A)
+#define EHRPWM_PCCTL            (0x3C)
+#define EHRPWM_HRCNFG           (0xC0)
+
+
 #define BBBIO_PWMSS_COUNT       3
 #define BBBIO_PWMSS0    0
 #define BBBIO_PWMSS1    1
