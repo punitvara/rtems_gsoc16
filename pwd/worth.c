@@ -242,7 +242,7 @@ if(divisor > (128 * 14)) {
 printf("Frequency can't generate ");
 }
  else {
-                /* using Exhaustive Attack metho */
+                /* using Exhaustive Attack method */
                 for(i = 0 ; i < 8 ; i ++) {
                         for(j = 0 ; j < 8 ; j ++) {
                                 if((CLKDIV_div[i] * HSPCLKDIV_div[j]) < (CLKDIV_div[NearCLKDIV] * HSPCLKDIV_div[NearHSPCLKDIV]) &&
@@ -275,5 +275,29 @@ printf("Frequency can't generate ");
         }
         return RTEMS_SUCCESSFUL;
 }
+void bbb_epwm_init(void)
+{       /* Enable the EPWM interface on the beagle bone black */
+        rtems_gpio_initialize();
 
+	assert (bbb_gpio_select_epwm() == RTEMS_SUCCESSFUL );
+}
+
+/*this function should be added at ../libbsp/arm/beagle/gpio/bbb-gpio.c */
+rtems_status_code bbb_gpio_select_epwm(void)
+{
+	return rtems_gpio_multi_select(epwm_config, EPWM_PIN_COUNT);
+}
+
+/* this function should be added at ../libbsp/arm/beagle/gpio/bbb-gpio.c*/
+
+rtems_gpio_specific_data alt_func_def[] = {
+  {.io_function = BBB_ALT_FUNC_0, .pin_data = NULL},
+  {.io_function = BBB_ALT_FUNC_1, .pin_data = NULL},
+  {.io_function = BBB_ALT_FUNC_2, .pin_data = NULL},
+  {.io_function = BBB_ALT_FUNC_3, .pin_data = NULL},
+  {.io_function = BBB_ALT_FUNC_4, .pin_data = NULL},
+  {.io_function = BBB_ALT_FUNC_5, .pin_data = NULL},
+  {.io_function = BBB_ALT_FUNC_6, .pin_data = NULL},
+  {.io_function = BBB_ALT_FUCN_7, .pin_data = NULL}
+};
 
