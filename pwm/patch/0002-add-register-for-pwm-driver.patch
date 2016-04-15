@@ -1,7 +1,7 @@
 From 6d5dc66de3992724cd0f66e875506178113620e2 Mon Sep 17 00:00:00 2001
 From: Punit Vara <punitvara@gmail.com>
 Date: Sat, 9 Apr 2016 17:04:52 +0530
-Subject: [PATCH 2/2] add register for pwm driver
+Subject: [PATCH 2/3] add register for pwm driver
 
 ---
  c/src/lib/libcpu/arm/shared/include/am335x.h | 858 ++++++++++++++++++++++++++-

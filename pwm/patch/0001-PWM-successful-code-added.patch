@@ -1,0 +1,786 @@
+From 9a46c91944a49d19137915b46362e5cf1bcfcf9b Mon Sep 17 00:00:00 2001
+From: Punit Vara <punitvara@gmail.com>
+Date: Sat, 16 Apr 2016 00:13:27 +0530
+Subject: [PATCH 3/3] PWM successful code added
+
+---
+ c/src/lib/libbsp/arm/beagle/include/bbb-pwm.h |  10 +-
+ c/src/lib/libbsp/arm/beagle/pwm/bbb-pwm.c     | 260 +++++++++++++++++++++++++-
+ c/src/lib/libbsp/shared/include/gpio.h        |  51 +++++
+ c/src/lib/libcpu/arm/shared/include/am335x.h  |   5 +-
+ testsuites/samples/Makefile.am                |   2 +-
+ testsuites/samples/configure.ac               |   1 +
+ testsuites/samples/pwm/.init.c.swl            | Bin 0 -> 16384 bytes
+ testsuites/samples/pwm/.init.c.swm            | Bin 0 -> 12288 bytes
+ testsuites/samples/pwm/.init.c.swn            | Bin 0 -> 12288 bytes
+ testsuites/samples/pwm/.init.c.swo            | Bin 0 -> 12288 bytes
+ testsuites/samples/pwm/Makefile.am            |  19 ++
+ testsuites/samples/pwm/init.c                 |  77 ++++++++
+ testsuites/samples/pwm/pwm.doc                |   9 +
+ testsuites/samples/pwm/pwm.scn                |   3 +
+ 14 files changed, 430 insertions(+), 7 deletions(-)
+ create mode 100644 testsuites/samples/pwm/.init.c.swl
+ create mode 100644 testsuites/samples/pwm/.init.c.swm
+ create mode 100644 testsuites/samples/pwm/.init.c.swn
+ create mode 100644 testsuites/samples/pwm/.init.c.swo
+ create mode 100644 testsuites/samples/pwm/Makefile.am
+ create mode 100644 testsuites/samples/pwm/init.c
+ create mode 100644 testsuites/samples/pwm/pwm.doc
+ create mode 100644 testsuites/samples/pwm/pwm.scn
+
+diff --git a/c/src/lib/libbsp/arm/beagle/include/bbb-pwm.h b/c/src/lib/libbsp/arm/beagle/include/bbb-pwm.h
+index c5f76e5..5102f33 100644
+--- a/c/src/lib/libbsp/arm/beagle/include/bbb-pwm.h
++++ b/c/src/lib/libbsp/arm/beagle/include/bbb-pwm.h
+@@ -1,8 +1,8 @@
+ #ifndef LIBBSP_ARM_BEAGLE_BBB_PWM_H
+ #define LIBBSP_ARM_BEAGLE_BBB_PWM_H
+ 
+-
+ void PWMSSTBClkEnable(unsigned int instance);
++void EHRPWMClockEnable(unsigned int baseAdd);
+ void PWMSSModuleClkConfig(unsigned int instanceNum);
+ void EHRPWMTimebaseClkConfig(unsigned int baseAddr,
+                              unsigned int tbClk,
+@@ -33,6 +33,14 @@ void EHRPWMConfigureAQActionOnB(unsigned int baseAddr,
+                                 unsigned int CBUp,
+                                 unsigned int CBDown,
+                                 unsigned int SWForced);
++void EHRPWMConfigureAQActionOnA(unsigned int baseAddr,
++                                unsigned int zero,
++                                unsigned int period,
++                                unsigned int CAUp,
++                                unsigned int CADown,
++                                unsigned int CBUp,
++                                unsigned int CBDown,
++                                unsigned int SWForced);
+ void EHRPWMDBOutput(unsigned int baseAddr, unsigned int DBgenOpMode);
+ void EHRPWMChopperDisable(unsigned int baseAddr);
+ void EHRPWMTZTripEventDisable(unsigned int baseAddr, bool osht_CBC);
+diff --git a/c/src/lib/libbsp/arm/beagle/pwm/bbb-pwm.c b/c/src/lib/libbsp/arm/beagle/pwm/bbb-pwm.c
+index c5c69db..4b427bb 100644
+--- a/c/src/lib/libbsp/arm/beagle/pwm/bbb-pwm.c
++++ b/c/src/lib/libbsp/arm/beagle/pwm/bbb-pwm.c
+@@ -1,3 +1,44 @@
++/**
++ *  \file   bbb-pwm.c
++ *
++ *  \brief  This file contains the device abstraction layer APIs for EHRPWM.
++ */
++
++/*
++* Copyright (C) 2010 Texas Instruments Incorporated - http://www.ti.com/
++*/
++/*
++*  Redistribution and use in source and binary forms, with or without
++*  modification, are permitted provided that the following conditions
++*  are met:
++*
++*    Redistributions of source code must retain the above copyright
++*    notice, this list of conditions and the following disclaimer.
++*
++*    Redistributions in binary form must reproduce the above copyright
++*    notice, this list of conditions and the following disclaimer in the
++*    documentation and/or other materials provided with the
++*    distribution.
++*
++*    Neither the name of Texas Instruments Incorporated nor the names of
++*    its contributors may be used to endorse or promote products derived
++*    from this software without specific prior written permission.
++*
++*  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++*  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++*  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++*  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++*  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++*  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++*  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++*  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++*  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++*  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++*  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++*   
++*/
++
++
+ #include<libcpu/am335x.h>
+ #include<stdio.h>
+ #include<bsp/gpio.h>
+@@ -17,17 +58,17 @@ void PWMSSTBClkEnable(unsigned int instance)
+     {
+ 
+          case 0:
+-               REG(SOC_CONTROL_REGS + CONTROL_PWMSS_CTRL) |=
++               REG(AM335X_PADCONF_BASE + CONTROL_PWMSS_CTRL) |=
+                                              CONTROL_PWMSS_CTRL_PWMSS0_TBCLKEN;
+                break;
+ 
+          case 1:
+-               REG(SOC_CONTROL_REGS + CONTROL_PWMSS_CTRL) |=
++               REG(AM335X_PADCONF_BASE + CONTROL_PWMSS_CTRL) |=
+                                              CONTROL_PWMSS_CTRL_PWMMS1_TBCLKEN;
+                break;
+ 
+          case 2:
+-               REG(SOC_CONTROL_REGS + CONTROL_PWMSS_CTRL) |=
++               REG(AM335X_PADCONF_BASE + CONTROL_PWMSS_CTRL) |=
+                                              CONTROL_PWMSS_CTRL_PWMSS2_TBCLKEN;
+                break;
+ 
+@@ -36,6 +77,51 @@ void PWMSSTBClkEnable(unsigned int instance)
+     }
+ }
+ 
++void EPWMPinMuxSetup(void)
++{
++REG(AM335X_PADCONF_BASE + CONTROL_CONF_GPMC_AD(9)) = BBB_MUXMODE(4);
++
++REG(AM335X_PADCONF_BASE + CONTROL_CONF_GPMC_AD(8)) = BBB_MUXMODE(4);
++
++REG(AM335X_PADCONF_BASE + CONTROL_CONF_LCD_DATA(0)) = BBB_MUXMODE(3);
++
++REG(AM335X_PADCONF_BASE + CONTROL_CONF_LCD_DATA(1)) = BBB_MUXMODE(3);
++
++REG(AM335X_PADCONF_BASE + CONTROL_CONF_LCD_DATA(11)) = BBB_MUXMODE(2);
++
++REG(AM335X_PADCONF_BASE + CONTROL_CONF_LCD_DATA(10)) = BBB_MUXMODE(2);
++
++REG(AM335X_PADCONF_BASE + CONTROL_CONF_GPMC_AD(2)) = BBB_MUXMODE(6);
++
++REG(AM335X_PADCONF_BASE + CONTROL_CONF_GPMC_AD(3)) = BBB_MUXMODE(6);
++
++REG(AM335X_PADCONF_BASE + AM335X_CONF_SPI0_D0) = BBB_MUXMODE(3);
++
++REG(AM335X_PADCONF_BASE + AM335X_CONF_SPI0_SCLK) = BBB_MUXMODE(3);
++
++REG(AM335X_PADCONF_BASE + AM335X_CONF_MCASP0_FSX) = BBB_MUXMODE(1);
++
++REG(AM335X_PADCONF_BASE + AM335X_CONF_MCASP0_ACLKX) = BBB_MUXMODE(1);
++}
++
++
++
++
++/**
++ * \brief   This functions enables clock for EHRPWM module in PWMSS subsystem.
++ *
++ * \param   baseAdd   It is the Memory address of the PWMSS instance used.
++ *
++ * \return  None.
++ *
++ **/
++
++void EHRPWMClockEnable(unsigned int baseAdd)
++{
++    REG(baseAdd + PWMSS_CLOCK_CONFIG) |= PWMSS_EHRPWM_CLK_EN_ACK;
++}
++
++
+ /**
+  * \brief   This function configures the L3 and L4_PER system clocks.
+  *          It also configures the system clocks for the specified ePWMSS
+@@ -423,6 +509,52 @@ void EHRPWMConfigureAQActionOnB(unsigned int baseAddr,
+      ((SWForced << EHRPWM_AQSFRC_ACTSFB_SHIFT) & EHRPWM_AQSFRC_ACTSFB);
+ }
+ /**
++ * \brief  This API configures the action to be taken on A by the Action
++ *         qualifier module upon receiving the events. This will determine
++ *         the output waveform.
++ *
++ * \param   zero      Action to be taken when CTR = 0
++ * \param   period    Action to be taken when CTR = PRD
++ * \param   CAUp      Action to be taken when CTR = CAUp
++ * \param   CADown    Action to be taken when CTR = CADown
++ * \param   CBUp      Action to be taken when CTR = CBUp
++ * \param   CBDown    Action to be taken when CTR = CBDown
++ * \param   SWForced  Action to be taken when SW forced event has been generated
++ *
++ *     Possible values for the actions are
++ *          - EHRPWM_XXXX_XXXX_DONOTHING \n
++ *          - EHRPWM_XXXX_XXXX_CLEAR \n
++ *          - EHRPWM_XXXX_XXXX_SET \n
++ *          - EHRPWM_XXXX_XXXX_TOGGLE \n
++ *
++ * \return  None
++ *
++ **/
++void EHRPWMConfigureAQActionOnA(unsigned int baseAddr,
++                                unsigned int zero,
++                                unsigned int period,
++                                unsigned int CAUp,
++                                unsigned int CADown,
++                                unsigned int CBUp,
++                                unsigned int CBDown,
++                                unsigned int SWForced)
++{
++    REG16(baseAddr + EHRPWM_AQCTLA) =
++        ((CBDown << EHRPWM_AQCTLA_CBD_SHIFT) & EHRPWM_AQCTLA_CBD) |
++        ((CBUp << EHRPWM_AQCTLA_CBU_SHIFT) & EHRPWM_AQCTLA_CBU) |
++        ((CADown << EHRPWM_AQCTLA_CAD_SHIFT) & EHRPWM_AQCTLA_CAD) |
++        ((CAUp << EHRPWM_AQCTLA_CAU_SHIFT) & EHRPWM_AQCTLA_CAU) |
++        ((period << EHRPWM_AQCTLA_PRD_SHIFT) & EHRPWM_AQCTLA_PRD) |
++        ((zero << EHRPWM_AQCTLA_ZRO_SHIFT) & EHRPWM_AQCTLA_ZRO);
++
++
++    REG16(baseAddr + EHRPWM_AQSFRC) = (REG16(baseAddr + EHRPWM_AQSFRC) &
++            (~EHRPWM_AQSFRC_ACTSFA)) | ((SWForced <<
++            EHRPWM_AQSFRC_ACTSFA_SHIFT) & EHRPWM_AQSFRC_ACTSFA);
++}
++
++
++/**
+  * \brief   This API selects output mode. This allows to selectively enable or
+  *          bypass the dead-band generation for the falling-edge and rising-edge
+  *          delay.
+@@ -530,3 +662,125 @@ void EHRPWMHRDisable(unsigned int baseAddr)
+      REG16(baseAddr + EHRPWM_HRCNFG) &= (~EHRPWM_HR_EDGEMODE);
+ }
+ 
++/**
++ * \brief   This API enables the particular PWM module.
++ *
++ * \param   baseAddr    Base Address of the PWM Module Registers.
++ *
++ * \return  None
++ *
++ **/
++void ehrPWM_Enable(unsigned int baseAddr)
++{
++	REG16(baseAddr + EHRPWM_AQCTLA) = 0x2 | (0x3 << 4);
++        REG16(baseAddr + EHRPWM_AQCTLB) = 0x2 | (0x3 << 8);
++	REG16(baseAddr + EHRPWM_TBCNT) = 0;
++	REG16(baseAddr + EHRPWM_TBCTL) = ~0x3;
++}
++
++/**
++ * \brief   This API disables the HR sub-module.
++ *
++ * \param   baseAddr    Base Address of the PWM Module Registers.
++ *
++ * \return  None
++ *
++ **/
++
++void ehrPWM_Disable(unsigned int baseAddr)
++{
++
++	REG16(baseAddr + EHRPWM_TBCTL) = 0x3;
++	REG16(baseAddr + EHRPWM_AQCTLA) = 0x1 | ( 0x3 << 4 );
++	REG16(baseAddr + EHRPWM_AQCTLB) = 0x1 | ( 0x3 << 8 );
++	REG16(baseAddr + EHRPWM_TBCNT)  = 0;
++}
++
++/* PWMSS setting
++ *      set pulse argument of epwm module
++ *
++ *      @param PWMID    : EPWMSS number , 0~2
++ *      @param HZ       : pulse HZ
++ *      @param dutyA    : Duty Cycle in ePWM A
++ *      @param dutyB    : Duty Cycle in ePWM B
++ *
++ *      @return         : 1 for success , 0 for failed
++ *
++ *      @example        :  PWMSS_Setting(0 , 50.0f , 50.0f , 25.0f);      // Generate 50HZ pwm in PWM0 ,
++ *                                                                              // duty cycle is 50% for ePWM0A , 25% for ePWM0B
++ *
++ *      @Note :
++ *              find an number nearst 65535 for TBPRD , to improve duty precision,
++ *
++ *              Using big TBPRD can increase the range of CMPA and CMPB ,
++ *              and it means we can get better precision on duty cycle.
++ *
++ *              EX : 20.25% duty cycle
++ *                  on TBPRD = 62500 , CMPA = 12656.25 ( .25 rejection) , real duty : 20.2496% (12656 /62500)
++ *                  on TBPRD = 6250  , CMPA = 1265.625 ( .625 rejection), real duty : 20.24%   (1265 6250)
++ *                  on TBPRD = 500   , CMPA = 101.25   ( .25 rejection) , real duty : 20.2%    (101/500)
++ *
++ *              Divisor = CLKDIV * HSPCLKDIV
++ *                      1 TBPRD : 10 ns (default)
++ *                      65535 TBPRD : 655350 ns
++ *                      65535 TBPRD : 655350 * Divisor ns  = X TBPRD : Cyclens
++ *
++ *              accrooding to that , we must find a Divisor value , let X nearest 65535 .
++ *              so , Divisor must  Nearest Cyclens/655350
++*/
++
++int PWMSS_Setting(unsigned int baseAddr, float HZ, float dutyA, float dutyB)
++{
++	int param_error =1;
++	if(HZ < 0)
++	param_error =0;
++	if(dutyA < 0.0f || dutyA > 100.0f || dutyB < 0.0f || dutyB > 100.0f)
++	param_error = 0;
++	if(param_error == 0) {
++	printf("ERROR in parameter \n");
++	}
++	dutyA /= 100.0f;
++	dutyB /= 100.0f;
++
++	/*Compute necessary TBPRD*/
++	float Cyclens = 0.0f;
++	float Divisor =0;
++	int i,j;
++	const float CLKDIV_div[] = {1.0,2.0,4.0,8.0,16.0,32.0,64.0,128.0};
++	const float HSPCLKDIV_div[] = {1.0, 2.0, 4.0, 6.0, 8.0, 10.0,12.0, 14.0};
++	int NearCLKDIV =7;
++	int NearHSPCLKDIV =7;
++	int NearTBPRD =0;
++
++	Cyclens = 1000000000.0f / HZ; /** 10^9 /Hz compute time per cycle (ns)
++				       */
++	Divisor = (Cyclens / 655350.0f);  /** am335x provide (128* 14) divider,
++                                           *  and per TBPRD means 10ns when divider 
++					   *  and max TBPRD is 65535 so max cycle 
++					   *  is 128 * 8 * 14 * 65535 * 10ns
++					   */
++	if(Divisor > (128 * 14)) {
++	printf("Can't generate %f HZ",HZ);
++	return 0;
++	}
++	else {
++		for (i=0;i<8;i++) {
++			for(j=0 ; j<8; j++) {
++				if((CLKDIV_div[i] * HSPCLKDIV_div[j]) < (CLKDIV_div[NearCLKDIV] 
++					* HSPCLKDIV_div[NearHSPCLKDIV]) && (CLKDIV_div[i] * HSPCLKDIV_div[j] > Divisor)) {
++						NearCLKDIV = i;
++						NearHSPCLKDIV = j;
++					}
++				}
++			}
++	NearTBPRD = (Cyclens / (10.0 * CLKDIV_div[NearCLKDIV] * HSPCLKDIV_div[NearHSPCLKDIV]));
++	/*setting clock divider and freeze time base*/
++	REG16(baseAddr + EHRPWM_TBCTL) = EHRPWM_TBCTL_CTRMODE_STOPFREEZE | (NearCLKDIV << 10) | (NearHSPCLKDIV << 7);
++	REG16(baseAddr + EHRPWM_CMPB) = (unsigned short)((float)NearTBPRD * dutyB);
++	REG16(baseAddr + EHRPWM_CMPA) = (unsigned short)((float)NearTBPRD * dutyA);
++	REG16(baseAddr + EHRPWM_TBPRD) = (unsigned short)NearTBPRD;
++	REG16(baseAddr + EHRPWM_TBCNT) = 0; 
++	}
++return 1;
++}
++
+diff --git a/c/src/lib/libbsp/shared/include/gpio.h b/c/src/lib/libbsp/shared/include/gpio.h
+index 7d8f67b..89606c8 100644
+--- a/c/src/lib/libbsp/shared/include/gpio.h
++++ b/c/src/lib/libbsp/shared/include/gpio.h
+@@ -947,6 +947,57 @@ extern rtems_status_code rtems_gpio_bsp_disable_interrupt(
+ 
+ /** @} */
+ 
++extern void PWMSSTBClkEnable(unsigned int instance);
++extern void EHRPWMClockEnable(unsigned int baseAdd);
++extern void PWMSSModuleClkConfig(unsigned int instanceNum);
++extern void EHRPWMTimebaseClkConfig(unsigned int baseAddr,
++                             unsigned int tbClk,
++                             unsigned int moduleClk);
++extern void EHRPWMPWMOpFreqSet(unsigned int baseAddr,
++                        unsigned int tbClk,
++                        unsigned int pwmFreq,
++                        unsigned int counterDir,
++                        bool enableShadowWrite);
++extern void EHRPWMTimebaseSyncDisable(unsigned int baseAddr);
++extern void EHRPWMSyncOutModeSet(unsigned int baseAddr, unsigned int syncOutMode);
++extern void EHRPWMTBEmulationModeSet(unsigned int baseAddr, unsigned int mode);
++extern bool EHRPWMLoadCMPA(unsigned int baseAddr,
++                    unsigned int CMPAVal,
++                    bool enableShadowWrite,
++                    unsigned int ShadowToActiveLoadTrigger,
++                    bool OverwriteShadowFull);
++extern bool EHRPWMLoadCMPB(unsigned int baseAddr,
++                    unsigned int CMPBVal,
++                    bool enableShadowWrite,
++                    unsigned int ShadowToActiveLoadTrigger,
++                    bool OverwriteShadowFull);
++extern void EHRPWMConfigureAQActionOnB(unsigned int baseAddr,
++                                unsigned int zero,
++                                unsigned int period,
++                                unsigned int CAUp,
++                                unsigned int CADown,
++                                unsigned int CBUp,
++                                unsigned int CBDown,
++                                unsigned int SWForced);
++extern void EHRPWMConfigureAQActionOnA(unsigned int baseAddr,
++                                unsigned int zero,
++                                unsigned int period,
++                                unsigned int CAUp,
++                                unsigned int CADown,
++                                unsigned int CBUp,
++                                unsigned int CBDown,
++                                unsigned int SWForced);
++extern void EHRPWMDBOutput(unsigned int baseAddr, unsigned int DBgenOpMode);
++extern void EHRPWMChopperDisable(unsigned int baseAddr);
++extern void EHRPWMTZTripEventDisable(unsigned int baseAddr, bool osht_CBC);
++extern void EHRPWMETIntPrescale(unsigned int baseAddr, unsigned int prescale);
++extern void EHRPWMETIntSourceSelect(unsigned int baseAddr, unsigned int selectInt);
++extern void EHRPWMHRDisable(unsigned int baseAddr);
++extern void EPWMPinMuxSetup(void);
++extern int PWMSS_Setting(unsigned int baseAddr, float HZ, float dutyA, float dutyB);
++extern void ehrPWM_Disable(unsigned int baseAddr);
++extern void ehrPWM_Enable(unsigned int baseAddr);
++
+ #ifdef __cplusplus
+ }
+ #endif /* __cplusplus */
+diff --git a/c/src/lib/libcpu/arm/shared/include/am335x.h b/c/src/lib/libcpu/arm/shared/include/am335x.h
+index 500e94c..3bcd33f 100644
+--- a/c/src/lib/libcpu/arm/shared/include/am335x.h
++++ b/c/src/lib/libcpu/arm/shared/include/am335x.h
+@@ -513,9 +513,7 @@
+ #define SOC_EPWM_0_REGS                     (SOC_PWMSS0_REGS + SOC_EPWM_REGS)
+ #define SOC_EPWM_1_REGS                     (SOC_PWMSS1_REGS + SOC_EPWM_REGS)
+ #define SOC_EPWM_2_REGS                     (SOC_PWMSS2_REGS + SOC_EPWM_REGS)
+-#define SOC_EPWM_MODULE_FREQ                 100 
+  
+-#define SOC_CONTROL_REGS                     (0x44E10000)
+ #define CONTROL_PWMSS_CTRL   (0x664)
+ #define CONTROL_PWMSS_CTRL_PWMSS0_TBCLKEN   (0x00000001u)
+ #define CONTROL_PWMSS_CTRL_PWMMS1_TBCLKEN   (0x00000002u)
+@@ -1323,4 +1321,7 @@
+ #define CM_PER_OCPWP_L3_CLKSTCTRL_CLKTRCTRL_SW_SLEEP   (0x1u)
+ #define CM_PER_OCPWP_L3_CLKSTCTRL_CLKTRCTRL_SW_WKUP   (0x2u)
+ 
++#define CONTROL_CONF_GPMC_AD(n)   (0x800 + (n * 4))
++#define CONTROL_CONF_LCD_DATA(n)   (0x8a0 + (n * 4))
++#define EHRPWM_TBCNT	0x8
+ 
+diff --git a/testsuites/samples/Makefile.am b/testsuites/samples/Makefile.am
+index 374617b..70ebe57 100644
+--- a/testsuites/samples/Makefile.am
++++ b/testsuites/samples/Makefile.am
+@@ -1,6 +1,6 @@
+ ACLOCAL_AMFLAGS = -I ../aclocal
+ 
+-_SUBDIRS = hello capture ticker base_sp unlimited minimum fileio
++_SUBDIRS = hello capture ticker base_sp unlimited minimum fileio pwm
+ 
+ if MPTESTS
+ ## base_mp is a sample multiprocessing test
+diff --git a/testsuites/samples/configure.ac b/testsuites/samples/configure.ac
+index 91a3661..72a64a0 100644
+--- a/testsuites/samples/configure.ac
++++ b/testsuites/samples/configure.ac
+@@ -62,6 +62,7 @@ AC_CHECK_SIZEOF([time_t])
+ AC_CONFIG_FILES([Makefile
+ base_sp/Makefile
+ hello/Makefile
++pwm/Makefile
+ loopback/Makefile
+ minimum/Makefile
+ fileio/Makefile
+diff --git a/testsuites/samples/pwm/.init.c.swl b/testsuites/samples/pwm/.init.c.swl
+new file mode 100644
+index 0000000000000000000000000000000000000000..658f94dd4922fdc7ae56e49e727ca2288cd16282
+GIT binary patch
+literal 16384
+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
+AYybcN
+
+literal 0
+HcmV?d00001
+
+diff --git a/testsuites/samples/pwm/.init.c.swm b/testsuites/samples/pwm/.init.c.swm
+new file mode 100644
+index 0000000000000000000000000000000000000000..e920e4e851800139406419d0a7396d4e4efd1890
+GIT binary patch
+literal 12288
+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
+NkI7dIyx8#u`46SRN<RPq
+
+literal 0
+HcmV?d00001
+
+diff --git a/testsuites/samples/pwm/.init.c.swn b/testsuites/samples/pwm/.init.c.swn
+new file mode 100644
+index 0000000000000000000000000000000000000000..02589f48b9e62eac814b16d105f029dff6458054
+GIT binary patch
+literal 12288
+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
+VHI&KcJK9isOg>`Z!Hze`e*l-kPQ?HK
+
+literal 0
+HcmV?d00001
+
+diff --git a/testsuites/samples/pwm/.init.c.swo b/testsuites/samples/pwm/.init.c.swo
+new file mode 100644
+index 0000000000000000000000000000000000000000..89e8eb53dfc4eafc247711227bb02655ff55a3d2
+GIT binary patch
+literal 12288
+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
+Ul*yMn+En^XzF*+2jyK7_09zJI+yDRo
+
+literal 0
+HcmV?d00001
+
+diff --git a/testsuites/samples/pwm/Makefile.am b/testsuites/samples/pwm/Makefile.am
+new file mode 100644
+index 0000000..85d0fc1
+--- /dev/null
++++ b/testsuites/samples/pwm/Makefile.am
+@@ -0,0 +1,19 @@
++rtems_tests_PROGRAMS = pwm
++pwm_SOURCES = init.c
++
++dist_rtems_tests_DATA = pwm.scn
++dist_rtems_tests_DATA += pwm.doc
++
++include $(RTEMS_ROOT)/make/custom/@RTEMS_BSP@.cfg
++include $(top_srcdir)/../automake/compile.am
++include $(top_srcdir)/../automake/leaf.am
++
++
++LINK_OBJS = $(pwm_OBJECTS)
++LINK_LIBS = $(pwm_LDLIBS)
++
++hello$(EXEEXT): $(pwm_OBJECTS) $(pwm_DEPENDENCIES)
++	@rm -f pwm$(EXEEXT)
++	$(make-exe)
++
++include $(top_srcdir)/../automake/local.am
+diff --git a/testsuites/samples/pwm/init.c b/testsuites/samples/pwm/init.c
+new file mode 100644
+index 0000000..30fc6ae
+--- /dev/null
++++ b/testsuites/samples/pwm/init.c
+@@ -0,0 +1,77 @@
++/*
++This application enables EHRPWM2A, EHRPWM2B module. I am trying to generate pwm of 100KHz. 
++CMPB counter value loaded 100. At counter Pulse stay high, and when counter equals to 100 then pulse forced to low. 
++
++*/
++
++
++#ifdef HAVE_CONFIG_H
++#include "config.h"
++#endif
++
++#include<rtems/test.h>
++#include<bsp.h>
++#include<bsp/gpio.h>
++#include<stdio.h>
++#include<stdlib.h>
++#include<bsp/bbb-pwm.h>
++
++const char rtems_test_name[] = "Punit PWM test GSOC 2016";
++static void inline delay_sec(int sec)
++{
++  rtems_task_wake_after(sec*rtems_clock_get_ticks_per_second());
++}  
++
++rtems_task Init(rtems_task_argument argument);
++
++rtems_task Init(
++	rtems_task_argument ignored
++)
++{
++	rtems_test_begin();
++	printf("Starting PWM Testing");
++
++/* Initialization PWM API*/
++rtems_gpio_initialize();
++PWMSSModuleClkConfig(2);
++EPWMPinMuxSetup();
++EHRPWMClockEnable(SOC_PWMSS2_REGS);
++
++PWMSSTBClkEnable(2);
++
++
++
++        const float PWM_HZ = 100.0f ;   /* 100 Hz */
++        const float duty_A = 20.0f ;    /* 20% Duty cycle for PWM 0_A output */
++        const float duty_B = 50.0f ;    /* 50% Duty cycle for PWM 0_B output*/
++
++        printf("PWM Demo setting ....\n");
++        PWMSS_Setting(SOC_EPWM_2_REGS, PWM_HZ ,duty_A , duty_B);
++
++        printf("PWM  enable for 10s ....\n");
++        ehrPWM_Enable(SOC_EPWM_2_REGS);
++        delay_sec(10);
++
++        ehrPWM_Disable(SOC_EPWM_2_REGS);
++        printf("close\n");
++
++}
++
++/* NOTICE: the clock driver is enabled */
++#define CONFIGURE_APPLICATION_NEEDS_CLOCK_DRIVER
++#define CONFIGURE_APPLICATION_NEEDS_CONSOLE_DRIVER
++
++#define CONFIGURE_MAXIMUM_TASKS            1
++#define CONFIGURE_USE_DEVFS_AS_BASE_FILESYSTEM
++
++#define CONFIGURE_MAXIMUM_SEMAPHORES    1
++
++#define CONFIGURE_RTEMS_INIT_TASKS_TABLE 
++
++#define CONFIGURE_EXTRA_TASK_STACKS         (2 * RTEMS_MINIMUM_STACK_SIZE)
++
++#define CONFIGURE_INITIAL_EXTENSIONS RTEMS_TEST_INITIAL_EXTENSION
++
++#define CONFIGURE_INIT
++#include <rtems/confdefs.h>
++
+diff --git a/testsuites/samples/pwm/pwm.doc b/testsuites/samples/pwm/pwm.doc
+new file mode 100644
+index 0000000..9812864
+--- /dev/null
++++ b/testsuites/samples/pwm/pwm.doc
+@@ -0,0 +1,9 @@
++#  COPYRIGHT (c) 1989-1999.
++#  On-Line Applications Research Corporation (OAR).
++#
++#  The license and distribution terms for this file may be
++#  found in the file LICENSE in this distribution or at
++#  http://www.rtems.org/license/LICENSE.
++#
++
++
+diff --git a/testsuites/samples/pwm/pwm.scn b/testsuites/samples/pwm/pwm.scn
+new file mode 100644
+index 0000000..057ab6e
+--- /dev/null
++++ b/testsuites/samples/pwm/pwm.scn
+@@ -0,0 +1,3 @@
++*** GPIO TEST ***
++Gpio Testing
++*** END OF GPIO TEST ***
+-- 
+2.7.1
+
