@@ -1,4 +1,8 @@
-This is repo is for testing purpose. init.c is to test LED blinking with RTEMS APIs. 
+This repo containes my work during Google Summer of Code 2016. You can visit my abstract at official site 
+
+https://summerofcode.withgoogle.com/projects/#4789581136265216 
+
+**Video links for my progress on GSOC'16**
 
 Testing RTEMS on Beaglebone Black video :
 
