@@ -1,29 +1,49 @@
+/**
+ *  \file   bbb-pwm.c
+ *
+ *  \brief  This file contains the device abstraction layer APIs for EHRPWM.
+ */
+
+/*
+ * Copyright (C) 2010 Texas Instruments Incorporated - http://www.ti.com/
+ */
+/*
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions
+ *  are met:
+ *
+ *    Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ *    Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the
+ *    distribution.
+ *
+ *    Neither the name of Texas Instruments Incorporated nor the names of
+ *    its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ *  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ *  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ *  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ *  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ *  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ *  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *   
+ */
+
+
 #include<libcpu/am335x.h>
 #include<stdio.h>
 #include<bsp/gpio.h>
 #include<bsp/bbb-gpio.h>
-
-//*****************************************************************************
-//
-// Macros for hardware access, both direct and via the bit-band region.
-//
-//*****************************************************************************
-#define HWREG(x)                                                              \
-        (*((volatile unsigned int *)(x)))
-#define HWREGH(x)                                                             \
-        (*((volatile unsigned short *)(x)))
-#define HWREGB(x)                                                             \
-        (*((volatile unsigned char *)(x)))
-#define HWREGBITW(x, b)                                                       \
-        HWREG(((unsigned int)(x) & 0xF0000000) | 0x02000000 |                \
-              (((unsigned int)(x) & 0x000FFFFF) << 5) | ((b) << 2))
-#define HWREGBITH(x, b)                                                       \
-        HWREGH(((unsigned int)(x) & 0xF0000000) | 0x02000000 |               \
-               (((unsigned int)(x) & 0x000FFFFF) << 5) | ((b) << 2))
-#define HWREGBITB(x, b)                                                       \
-        HWREGB(((unsigned int)(x) & 0xF0000000) | 0x02000000 |               \
-               (((unsigned int)(x) & 0x000FFFFF) << 5) | ((b) << 2))
-
+#include<bsp.h>
 
 /**
  * \brief   This function Enables TBCLK(Time Base Clock) for specific
@@ -34,28 +54,83 @@
  **/
 void PWMSSTBClkEnable(unsigned int instance)
 {
-    switch(instance)
-    {
+	switch(instance)
+	{
 
-         case 0:
-               HWREG(SOC_CONTROL_REGS + CONTROL_PWMSS_CTRL) |=
-                                             CONTROL_PWMSS_CTRL_PWMSS0_TBCLKEN;
-               break;
+		case 0:
+			REG(AM335X_PADCONF_BASE + CONTROL_PWMSS_CTRL) |=
+				CONTROL_PWMSS_CTRL_PWMSS0_TBCLKEN;
+			break;
 
-         case 1:
-               HWREG(SOC_CONTROL_REGS + CONTROL_PWMSS_CTRL) |=
-                                             CONTROL_PWMSS_CTRL_PWMMS1_TBCLKEN;
-               break;
+		case 1:
+			REG(AM335X_PADCONF_BASE + CONTROL_PWMSS_CTRL) |=
+				CONTROL_PWMSS_CTRL_PWMMS1_TBCLKEN;
+			break;
 
-         case 2:
-               HWREG(SOC_CONTROL_REGS + CONTROL_PWMSS_CTRL) |=
-                                             CONTROL_PWMSS_CTRL_PWMSS2_TBCLKEN;
-               break;
+		case 2:
+			REG(AM335X_PADCONF_BASE + CONTROL_PWMSS_CTRL) |=
+				CONTROL_PWMSS_CTRL_PWMSS2_TBCLKEN;
+			break;
 
-         default:
-         break;
-    }
+		default:
+			break;
+	}
 }
+
+/**
+ * \brief   This function Enables pinmuxing for PWM module.
+ *          
+ *
+ * \param   instance  It is the instance number of EPWM of pwmsubsystem.
+ *
+ **/
+
+
+
+void EPWMPinMuxSetup(void)
+{
+	REG(AM335X_PADCONF_BASE + CONTROL_CONF_GPMC_AD(9)) = BBB_MUXMODE(4);
+
+	REG(AM335X_PADCONF_BASE + CONTROL_CONF_GPMC_AD(8)) = BBB_MUXMODE(4);
+
+	REG(AM335X_PADCONF_BASE + CONTROL_CONF_LCD_DATA(0)) = BBB_MUXMODE(3);
+
+	REG(AM335X_PADCONF_BASE + CONTROL_CONF_LCD_DATA(1)) = BBB_MUXMODE(3);
+
+	REG(AM335X_PADCONF_BASE + CONTROL_CONF_LCD_DATA(11)) = BBB_MUXMODE(2);
+
+	REG(AM335X_PADCONF_BASE + CONTROL_CONF_LCD_DATA(10)) = BBB_MUXMODE(2);
+
+	REG(AM335X_PADCONF_BASE + CONTROL_CONF_GPMC_AD(2)) = BBB_MUXMODE(6);
+
+	REG(AM335X_PADCONF_BASE + CONTROL_CONF_GPMC_AD(3)) = BBB_MUXMODE(6);
+
+	REG(AM335X_PADCONF_BASE + AM335X_CONF_SPI0_D0) = BBB_MUXMODE(3);
+
+	REG(AM335X_PADCONF_BASE + AM335X_CONF_SPI0_SCLK) = BBB_MUXMODE(3);
+
+	REG(AM335X_PADCONF_BASE + AM335X_CONF_MCASP0_FSX) = BBB_MUXMODE(1);
+
+	REG(AM335X_PADCONF_BASE + AM335X_CONF_MCASP0_ACLKX) = BBB_MUXMODE(1);
+}
+
+
+
+
+/**
+ * \brief   This functions enables clock for EHRPWM module in PWMSS subsystem.
+ *
+ * \param   baseAdd   It is the Memory address of the PWMSS instance used.
+ *
+ * \return  None.
+ *
+ **/
+
+void EHRPWMClockEnable(unsigned int baseAdd)
+{
+	REG(baseAdd + PWMSS_CLOCK_CONFIG) |= PWMSS_EHRPWM_CLK_EN_ACK;
+}
+
 
 /**
  * \brief   This function configures the L3 and L4_PER system clocks.
@@ -73,108 +148,108 @@ void PWMSSTBClkEnable(unsigned int instance)
  */
 void PWMSSModuleClkConfig(unsigned int instanceNum)
 {
-    HWREG(SOC_PRCM_REGS + CM_PER_L3S_CLKSTCTRL) |=
-                             CM_PER_L3S_CLKSTCTRL_CLKTRCTRL_SW_WKUP;
+	REG(SOC_PRCM_REGS + CM_PER_L3S_CLKSTCTRL) |=
+		CM_PER_L3S_CLKSTCTRL_CLKTRCTRL_SW_WKUP;
 
-    while((HWREG(SOC_PRCM_REGS + CM_PER_L3S_CLKSTCTRL) &
-     CM_PER_L3S_CLKSTCTRL_CLKTRCTRL) != CM_PER_L3S_CLKSTCTRL_CLKTRCTRL_SW_WKUP);
+	while((REG(SOC_PRCM_REGS + CM_PER_L3S_CLKSTCTRL) &
+				CM_PER_L3S_CLKSTCTRL_CLKTRCTRL) != CM_PER_L3S_CLKSTCTRL_CLKTRCTRL_SW_WKUP);
 
-    HWREG(SOC_PRCM_REGS + CM_PER_L3_CLKSTCTRL) |=
-                             CM_PER_L3_CLKSTCTRL_CLKTRCTRL_SW_WKUP;
+	REG(SOC_PRCM_REGS + CM_PER_L3_CLKSTCTRL) |=
+		CM_PER_L3_CLKSTCTRL_CLKTRCTRL_SW_WKUP;
 
-    while((HWREG(SOC_PRCM_REGS + CM_PER_L3_CLKSTCTRL) &
-     CM_PER_L3_CLKSTCTRL_CLKTRCTRL) != CM_PER_L3_CLKSTCTRL_CLKTRCTRL_SW_WKUP);
+	while((REG(SOC_PRCM_REGS + CM_PER_L3_CLKSTCTRL) &
+				CM_PER_L3_CLKSTCTRL_CLKTRCTRL) != CM_PER_L3_CLKSTCTRL_CLKTRCTRL_SW_WKUP);
 
-    HWREG(SOC_PRCM_REGS + CM_PER_L3_INSTR_CLKCTRL) |=
-                             CM_PER_L3_INSTR_CLKCTRL_MODULEMODE_ENABLE;
-while((HWREG(SOC_PRCM_REGS + CM_PER_L3_INSTR_CLKCTRL) &
-                               CM_PER_L3_INSTR_CLKCTRL_MODULEMODE) !=
-                                   CM_PER_L3_INSTR_CLKCTRL_MODULEMODE_ENABLE);
+	REG(SOC_PRCM_REGS + CM_PER_L3_INSTR_CLKCTRL) |=
+		CM_PER_L3_INSTR_CLKCTRL_MODULEMODE_ENABLE;
+	while((REG(SOC_PRCM_REGS + CM_PER_L3_INSTR_CLKCTRL) &
+				CM_PER_L3_INSTR_CLKCTRL_MODULEMODE) !=
+			CM_PER_L3_INSTR_CLKCTRL_MODULEMODE_ENABLE);
 
-    HWREG(SOC_PRCM_REGS + CM_PER_L3_CLKCTRL) |=
-                             CM_PER_L3_CLKCTRL_MODULEMODE_ENABLE;
+	REG(SOC_PRCM_REGS + CM_PER_L3_CLKCTRL) |=
+		CM_PER_L3_CLKCTRL_MODULEMODE_ENABLE;
 
-    while((HWREG(SOC_PRCM_REGS + CM_PER_L3_CLKCTRL) &
-        CM_PER_L3_CLKCTRL_MODULEMODE) != CM_PER_L3_CLKCTRL_MODULEMODE_ENABLE);
+	while((REG(SOC_PRCM_REGS + CM_PER_L3_CLKCTRL) &
+				CM_PER_L3_CLKCTRL_MODULEMODE) != CM_PER_L3_CLKCTRL_MODULEMODE_ENABLE);
 
-    HWREG(SOC_PRCM_REGS + CM_PER_OCPWP_L3_CLKSTCTRL) |=
-                             CM_PER_OCPWP_L3_CLKSTCTRL_CLKTRCTRL_SW_WKUP;
+	REG(SOC_PRCM_REGS + CM_PER_OCPWP_L3_CLKSTCTRL) |=
+		CM_PER_OCPWP_L3_CLKSTCTRL_CLKTRCTRL_SW_WKUP;
 
-    while((HWREG(SOC_PRCM_REGS + CM_PER_OCPWP_L3_CLKSTCTRL) &
-                              CM_PER_OCPWP_L3_CLKSTCTRL_CLKTRCTRL) !=
-                                CM_PER_OCPWP_L3_CLKSTCTRL_CLKTRCTRL_SW_WKUP);
+	while((REG(SOC_PRCM_REGS + CM_PER_OCPWP_L3_CLKSTCTRL) &
+				CM_PER_OCPWP_L3_CLKSTCTRL_CLKTRCTRL) !=
+			CM_PER_OCPWP_L3_CLKSTCTRL_CLKTRCTRL_SW_WKUP);
 
-    HWREG(SOC_PRCM_REGS + CM_PER_L4LS_CLKSTCTRL) |=
-                             CM_PER_L4LS_CLKSTCTRL_CLKTRCTRL_SW_WKUP;
-while((HWREG(SOC_PRCM_REGS + CM_PER_L4LS_CLKSTCTRL) &
-                             CM_PER_L4LS_CLKSTCTRL_CLKTRCTRL) !=
-                               CM_PER_L4LS_CLKSTCTRL_CLKTRCTRL_SW_WKUP);
+	REG(SOC_PRCM_REGS + CM_PER_L4LS_CLKSTCTRL) |=
+		CM_PER_L4LS_CLKSTCTRL_CLKTRCTRL_SW_WKUP;
+	while((REG(SOC_PRCM_REGS + CM_PER_L4LS_CLKSTCTRL) &
+				CM_PER_L4LS_CLKSTCTRL_CLKTRCTRL) !=
+			CM_PER_L4LS_CLKSTCTRL_CLKTRCTRL_SW_WKUP);
 
-    HWREG(SOC_PRCM_REGS + CM_PER_L4LS_CLKCTRL) |=
-                             CM_PER_L4LS_CLKCTRL_MODULEMODE_ENABLE;
+	REG(SOC_PRCM_REGS + CM_PER_L4LS_CLKCTRL) |=
+		CM_PER_L4LS_CLKCTRL_MODULEMODE_ENABLE;
 
-    while((HWREG(SOC_PRCM_REGS + CM_PER_L4LS_CLKCTRL) &
-      CM_PER_L4LS_CLKCTRL_MODULEMODE) != CM_PER_L4LS_CLKCTRL_MODULEMODE_ENABLE);
+	while((REG(SOC_PRCM_REGS + CM_PER_L4LS_CLKCTRL) &
+				CM_PER_L4LS_CLKCTRL_MODULEMODE) != CM_PER_L4LS_CLKCTRL_MODULEMODE_ENABLE);
 
-    if(0 == instanceNum)
-    {
-        HWREG(SOC_PRCM_REGS + CM_PER_EPWMSS0_CLKCTRL) |=
-            CM_PER_EPWMSS0_CLKCTRL_MODULEMODE_ENABLE;
+	if(0 == instanceNum)
+	{
+		REG(SOC_PRCM_REGS + CM_PER_EPWMSS0_CLKCTRL) |=
+			CM_PER_EPWMSS0_CLKCTRL_MODULEMODE_ENABLE;
 
-        while(CM_PER_EPWMSS0_CLKCTRL_MODULEMODE_ENABLE !=
-              (HWREG(SOC_PRCM_REGS + CM_PER_EPWMSS0_CLKCTRL) &
-               CM_PER_EPWMSS0_CLKCTRL_MODULEMODE));
-while((CM_PER_EPWMSS0_CLKCTRL_IDLEST_FUNC <<
-               CM_PER_EPWMSS0_CLKCTRL_IDLEST_SHIFT) !=
-              (HWREG(SOC_PRCM_REGS + CM_PER_EPWMSS0_CLKCTRL) &
-               CM_PER_EPWMSS0_CLKCTRL_IDLEST));
+		while(CM_PER_EPWMSS0_CLKCTRL_MODULEMODE_ENABLE !=
+				(REG(SOC_PRCM_REGS + CM_PER_EPWMSS0_CLKCTRL) &
+				 CM_PER_EPWMSS0_CLKCTRL_MODULEMODE));
+		while((CM_PER_EPWMSS0_CLKCTRL_IDLEST_FUNC <<
+					CM_PER_EPWMSS0_CLKCTRL_IDLEST_SHIFT) !=
+				(REG(SOC_PRCM_REGS + CM_PER_EPWMSS0_CLKCTRL) &
+				 CM_PER_EPWMSS0_CLKCTRL_IDLEST));
 
-    }
-    else if(1 == instanceNum)
-    {
-        HWREG(SOC_PRCM_REGS + CM_PER_EPWMSS1_CLKCTRL) |=
-            CM_PER_EPWMSS1_CLKCTRL_MODULEMODE_ENABLE;
+	}
+	else if(1 == instanceNum)
+	{
+		REG(SOC_PRCM_REGS + CM_PER_EPWMSS1_CLKCTRL) |=
+			CM_PER_EPWMSS1_CLKCTRL_MODULEMODE_ENABLE;
 
-        while(CM_PER_EPWMSS1_CLKCTRL_MODULEMODE_ENABLE !=
-              (HWREG(SOC_PRCM_REGS + CM_PER_EPWMSS1_CLKCTRL) &
-               CM_PER_EPWMSS1_CLKCTRL_MODULEMODE));
+		while(CM_PER_EPWMSS1_CLKCTRL_MODULEMODE_ENABLE !=
+				(REG(SOC_PRCM_REGS + CM_PER_EPWMSS1_CLKCTRL) &
+				 CM_PER_EPWMSS1_CLKCTRL_MODULEMODE));
 
-        while((CM_PER_EPWMSS1_CLKCTRL_IDLEST_FUNC <<
-               CM_PER_EPWMSS1_CLKCTRL_IDLEST_SHIFT) !=
-               (HWREG(SOC_PRCM_REGS + CM_PER_EPWMSS1_CLKCTRL) &
-               CM_PER_EPWMSS1_CLKCTRL_IDLEST));
+		while((CM_PER_EPWMSS1_CLKCTRL_IDLEST_FUNC <<
+					CM_PER_EPWMSS1_CLKCTRL_IDLEST_SHIFT) !=
+				(REG(SOC_PRCM_REGS + CM_PER_EPWMSS1_CLKCTRL) &
+				 CM_PER_EPWMSS1_CLKCTRL_IDLEST));
 
-    }
- else if(2 == instanceNum)
-    {
-        HWREG(SOC_PRCM_REGS + CM_PER_EPWMSS2_CLKCTRL) |=
-            CM_PER_EPWMSS2_CLKCTRL_MODULEMODE_ENABLE;
+	}
+	else if(2 == instanceNum)
+	{
+		REG(SOC_PRCM_REGS + CM_PER_EPWMSS2_CLKCTRL) |=
+			CM_PER_EPWMSS2_CLKCTRL_MODULEMODE_ENABLE;
 
-        while(CM_PER_EPWMSS2_CLKCTRL_MODULEMODE_ENABLE !=
-              (HWREG(SOC_PRCM_REGS + CM_PER_EPWMSS2_CLKCTRL) &
-               CM_PER_EPWMSS2_CLKCTRL_MODULEMODE));
+		while(CM_PER_EPWMSS2_CLKCTRL_MODULEMODE_ENABLE !=
+				(REG(SOC_PRCM_REGS + CM_PER_EPWMSS2_CLKCTRL) &
+				 CM_PER_EPWMSS2_CLKCTRL_MODULEMODE));
 
-        while((CM_PER_EPWMSS2_CLKCTRL_IDLEST_FUNC <<
-               CM_PER_EPWMSS2_CLKCTRL_IDLEST_SHIFT) !=
-               (HWREG(SOC_PRCM_REGS + CM_PER_EPWMSS2_CLKCTRL) &
-                CM_PER_EPWMSS2_CLKCTRL_IDLEST));
-    }
-    else
-    {
+		while((CM_PER_EPWMSS2_CLKCTRL_IDLEST_FUNC <<
+					CM_PER_EPWMSS2_CLKCTRL_IDLEST_SHIFT) !=
+				(REG(SOC_PRCM_REGS + CM_PER_EPWMSS2_CLKCTRL) &
+				 CM_PER_EPWMSS2_CLKCTRL_IDLEST));
+	}
+	else
+	{
 
-    }
-while(!(HWREG(SOC_PRCM_REGS + CM_PER_L3S_CLKSTCTRL) &
-            CM_PER_L3S_CLKSTCTRL_CLKACTIVITY_L3S_GCLK));
+	}
+	while(!(REG(SOC_PRCM_REGS + CM_PER_L3S_CLKSTCTRL) &
+				CM_PER_L3S_CLKSTCTRL_CLKACTIVITY_L3S_GCLK));
 
-    while(!(HWREG(SOC_PRCM_REGS + CM_PER_L3_CLKSTCTRL) &
-            CM_PER_L3_CLKSTCTRL_CLKACTIVITY_L3_GCLK));
+	while(!(REG(SOC_PRCM_REGS + CM_PER_L3_CLKSTCTRL) &
+				CM_PER_L3_CLKSTCTRL_CLKACTIVITY_L3_GCLK));
 
-    while(!(HWREG(SOC_PRCM_REGS + CM_PER_OCPWP_L3_CLKSTCTRL) &
-           (CM_PER_OCPWP_L3_CLKSTCTRL_CLKACTIVITY_OCPWP_L3_GCLK |
-            CM_PER_OCPWP_L3_CLKSTCTRL_CLKACTIVITY_OCPWP_L4_GCLK)));
+	while(!(REG(SOC_PRCM_REGS + CM_PER_OCPWP_L3_CLKSTCTRL) &
+				(CM_PER_OCPWP_L3_CLKSTCTRL_CLKACTIVITY_OCPWP_L3_GCLK |
+				 CM_PER_OCPWP_L3_CLKSTCTRL_CLKACTIVITY_OCPWP_L4_GCLK)));
 
-    while(!(HWREG(SOC_PRCM_REGS + CM_PER_L4LS_CLKSTCTRL) &
-           (CM_PER_L4LS_CLKSTCTRL_CLKACTIVITY_L4LS_GCLK )));
+	while(!(REG(SOC_PRCM_REGS + CM_PER_L4LS_CLKSTCTRL) &
+				(CM_PER_L4LS_CLKSTCTRL_CLKACTIVITY_L4LS_GCLK )));
 
 }
 
@@ -192,38 +267,41 @@ while(!(HWREG(SOC_PRCM_REGS + CM_PER_L3S_CLKSTCTRL) &
  **/
 
 void EHRPWMTimebaseClkConfig(unsigned int baseAddr,
-                             unsigned int tbClk,
-                             unsigned int moduleClk)
+		unsigned int tbClk,
+		unsigned int moduleClk)
 
 {
-    unsigned int clkDiv = moduleClk/tbClk;
-    unsigned int hspClkDiv;
-    unsigned int lspClkDiv, lspClkDivSetting = 0;
+	unsigned int clkDiv = moduleClk/tbClk;
+	unsigned int hspClkDiv;
+	unsigned int lspClkDiv, lspClkDivSetting = 0;
 
-    if(clkDiv > EHRPWM_TBCTL_HSPCLKDIV_14)
-    {
-        hspClkDiv = EHRPWM_TBCTL_HSPCLKDIV_DIVBY14; /* reg setting */
-        lspClkDiv = clkDiv/EHRPWM_TBCTL_HSPCLKDIV_14; /* divider */
-        /* reg setting */
-        while(lspClkDiv > 1)
-        {
-           lspClkDiv = lspClkDiv >> 1;
-           lspClkDivSetting++;
-        }
-    }
-    else
-    {
-        hspClkDiv = clkDiv/2; /* reg setting */
-        /* divide by 1 */
-        lspClkDivSetting = EHRPWM_TBCTL_HSPCLKDIV_DIVBY1;
-    }
- HWREGH(baseAddr + EHRPWM_TBCTL) = (HWREGH(baseAddr + EHRPWM_TBCTL) &
+	if(clkDiv > EHRPWM_TBCTL_HSPCLKDIV_14)
+	{
+		hspClkDiv = EHRPWM_TBCTL_HSPCLKDIV_DIVBY14; /* reg setting */
+		lspClkDiv = clkDiv/EHRPWM_TBCTL_HSPCLKDIV_14; /* divider */
+		/* reg setting */
+		while(lspClkDiv > 1)
+		{
+			lspClkDiv = lspClkDiv >> 1;
+			lspClkDivSetting++;
+		}
+	}
+	else
+	{
+		hspClkDiv = clkDiv/2; /* reg setting */
+		/* divide by 1 */
+		lspClkDivSetting = EHRPWM_TBCTL_HSPCLKDIV_DIVBY1;
+	}
+	
+	REG16(baseAddr + EHRPWM_TBCTL) = (REG16(baseAddr + EHRPWM_TBCTL) &
             (~EHRPWM_TBCTL_CLKDIV)) | ((lspClkDivSetting <<
             EHRPWM_TBCTL_CLKDIV_SHIFT) & EHRPWM_TBCTL_CLKDIV);
 
-    HWREGH(baseAddr + EHRPWM_TBCTL) = (HWREGH(baseAddr + EHRPWM_TBCTL) &
+        REG16(baseAddr + EHRPWM_TBCTL) = (REG16(baseAddr + EHRPWM_TBCTL) &
             (~EHRPWM_TBCTL_HSPCLKDIV)) | ((hspClkDiv <<
             EHRPWM_TBCTL_HSPCLKDIV_SHIFT) & EHRPWM_TBCTL_HSPCLKDIV);
+
+
 }
 
 /**
@@ -244,7 +322,6 @@ void EHRPWMTimebaseClkConfig(unsigned int baseAddr,
  * \return  None.
  *
  **/
-
 void EHRPWMPWMOpFreqSet(unsigned int baseAddr,
                         unsigned int tbClk,
                         unsigned int pwmFreq,
@@ -253,28 +330,32 @@ void EHRPWMPWMOpFreqSet(unsigned int baseAddr,
 {
      unsigned int tbPeriodCount = tbClk/pwmFreq;
 
-     HWREGH(baseAddr + EHRPWM_TBCTL) = (HWREGH(baseAddr + EHRPWM_TBCTL) &
+     REG16(baseAddr + EHRPWM_TBCTL) = (REG16(baseAddr + EHRPWM_TBCTL) &
              (~EHRPWM_PRD_LOAD_SHADOW_MASK)) | ((enableShadowWrite <<
             EHRPWM_TBCTL_PRDLD_SHIFT) & EHRPWM_PRD_LOAD_SHADOW_MASK);
 
-     HWREGH(baseAddr + EHRPWM_TBCTL) = (HWREGH(baseAddr + EHRPWM_TBCTL) &
+     REG16(baseAddr + EHRPWM_TBCTL) = (REG16(baseAddr + EHRPWM_TBCTL) &
              (~EHRPWM_COUNTER_MODE_MASK)) | ((counterDir <<
             EHRPWM_TBCTL_CTRMODE_SHIFT) &  EHRPWM_COUNTER_MODE_MASK);
 
      if(EHRPWM_COUNT_UP_DOWN == counterDir)
-     {
-         HWREGH(baseAddr + EHRPWM_TBPRD) = (unsigned short)tbPeriodCount/2;
+     {/*
+         REG16(baseAddr + EHRPWM_TBPRD) = (unsigned short)(1/(2*tbClk*pwmFreq));*/
+	 REG16(baseAddr + EHRPWM_TBPRD) = (unsigned short)tbPeriodCount/2;
      }
      else
      {
-         HWREGH(baseAddr + EHRPWM_TBPRD) = (unsigned short)tbPeriodCount;
+         /* REG16(baseAddr + EHRPWM_TBPRD) = (unsigned short)((1 - (tbClk*pwmFreq))/(tbClk*pwmFreq)); */
+	 REG16(baseAddr + EHRPWM_TBPRD) = (unsigned short)tbPeriodCount;
      }
 
 }
 
+
+
 void EHRPWMTimebaseSyncDisable(unsigned int baseAddr)
 {
-     HWREGH(baseAddr + EHRPWM_TBCTL) &= (~EHRPWM_SYNC_ENABLE);
+	REG16(baseAddr + EHRPWM_TBCTL) &= (~EHRPWM_SYNC_ENABLE);
 }
 
 /**
@@ -292,8 +373,8 @@ void EHRPWMTimebaseSyncDisable(unsigned int baseAddr)
  **/
 void EHRPWMSyncOutModeSet(unsigned int baseAddr, unsigned int syncOutMode)
 {
-     HWREGH(baseAddr + EHRPWM_TBCTL) = (HWREGH(baseAddr + EHRPWM_TBCTL) &
-             (~EHRPWM_SYNCOUT_MASK)) | syncOutMode;
+	REG16(baseAddr + EHRPWM_TBCTL) = (REG16(baseAddr + EHRPWM_TBCTL) &
+			(~EHRPWM_SYNCOUT_MASK)) | syncOutMode;
 }
 
 /**
@@ -310,8 +391,8 @@ void EHRPWMSyncOutModeSet(unsigned int baseAddr, unsigned int syncOutMode)
  **/
 void EHRPWMTBEmulationModeSet(unsigned int baseAddr, unsigned int mode)
 {
-     HWREGH(baseAddr + EHRPWM_TBCTL) = (HWREGH(baseAddr + EHRPWM_TBCTL) &
-         (~EHRPWM_TBCTL_FREE_SOFT)) | (mode & EHRPWM_TBCTL_FREE_SOFT);
+	REG16(baseAddr + EHRPWM_TBCTL) = (REG16(baseAddr + EHRPWM_TBCTL) &
+			(~EHRPWM_TBCTL_FREE_SOFT)) | (mode & EHRPWM_TBCTL_FREE_SOFT);
 }
 
 /**
@@ -331,31 +412,31 @@ void EHRPWMTBEmulationModeSet(unsigned int baseAddr, unsigned int mode)
  *
  **/
 bool EHRPWMLoadCMPA(unsigned int baseAddr,
-                    unsigned int CMPAVal,
-                    bool enableShadowWrite,
-                    unsigned int ShadowToActiveLoadTrigger,
-                    bool OverwriteShadowFull)
+		unsigned int CMPAVal,
+		bool enableShadowWrite,
+		unsigned int ShadowToActiveLoadTrigger,
+		bool OverwriteShadowFull)
 {
-    bool status = FALSE;
+	bool status = FALSE;
 
-    if((OverwriteShadowFull) ||
-        ((HWREGH(baseAddr+EHRPWM_CMPCTL) & EHRPWM_CMPCTL_SHDWAFULL) ==
-                             EHRPWM_SHADOW_A_EMPTY))
-    {
-        HWREGH(baseAddr + EHRPWM_CMPCTL) = (HWREGH(baseAddr + EHRPWM_CMPCTL) &
-            (~EHRPWM_CMPCTL_SHDWAMODE)) | ((enableShadowWrite <<
-            EHRPWM_CMPCTL_SHDWAMODE_SHIFT) & EHRPWM_CMPCTL_SHDWAMODE);
+	if((OverwriteShadowFull) ||
+			((REG16(baseAddr+EHRPWM_CMPCTL) & EHRPWM_CMPCTL_SHDWAFULL) ==
+			 EHRPWM_SHADOW_A_EMPTY))
+	{
+		REG16(baseAddr + EHRPWM_CMPCTL) = (REG16(baseAddr + EHRPWM_CMPCTL) &
+				(~EHRPWM_CMPCTL_SHDWAMODE)) | ((enableShadowWrite <<
+						EHRPWM_CMPCTL_SHDWAMODE_SHIFT) & EHRPWM_CMPCTL_SHDWAMODE);
 
-        HWREGH(baseAddr + EHRPWM_CMPCTL) = (HWREGH(baseAddr + EHRPWM_CMPCTL) &
-            (~EHRPWM_COMPA_LOAD_MASK)) |((ShadowToActiveLoadTrigger <<
-            EHRPWM_CMPCTL_LOADAMODE_SHIFT) & EHRPWM_COMPA_LOAD_MASK);
+		REG16(baseAddr + EHRPWM_CMPCTL) = (REG16(baseAddr + EHRPWM_CMPCTL) &
+				(~EHRPWM_COMPA_LOAD_MASK)) |((ShadowToActiveLoadTrigger <<
+						EHRPWM_CMPCTL_LOADAMODE_SHIFT) & EHRPWM_COMPA_LOAD_MASK);
 
-        HWREGH(baseAddr + EHRPWM_CMPA) = CMPAVal & EHRPWM_CMPA_CMPA;
+		REG16(baseAddr + EHRPWM_CMPA) = CMPAVal & EHRPWM_CMPA_CMPA;
 
-        status = TRUE;
-    }
+		status = TRUE;
+	}
 
-    return status;
+	return status;
 }
 /**
  * \brief  This API loads the CMPB value. When CMPB value equals the counter
@@ -374,30 +455,30 @@ bool EHRPWMLoadCMPA(unsigned int baseAddr,
  *
  **/
 bool EHRPWMLoadCMPB(unsigned int baseAddr,
-                    unsigned int CMPBVal,
-                    bool enableShadowWrite,
-                    unsigned int ShadowToActiveLoadTrigger,
-                    bool OverwriteShadowFull)
+		unsigned int CMPBVal,
+		bool enableShadowWrite,
+		unsigned int ShadowToActiveLoadTrigger,
+		bool OverwriteShadowFull)
 {
-    bool status = FALSE;
+	bool status = FALSE;
 
-    if((OverwriteShadowFull) ||
-        ((HWREGH(baseAddr+EHRPWM_CMPCTL) & EHRPWM_CMPCTL_SHDWBFULL) ==
-                             EHRPWM_SHADOW_B_EMPTY))
-    {
-        HWREGH(baseAddr + EHRPWM_CMPCTL) = (HWREGH(baseAddr + EHRPWM_CMPCTL)
-            & (~EHRPWM_CMPCTL_SHDWBMODE)) | ((enableShadowWrite <<
-            EHRPWM_CMPCTL_SHDWBMODE_SHIFT) & EHRPWM_CMPCTL_SHDWBMODE);
+	if((OverwriteShadowFull) ||
+			((REG16(baseAddr+EHRPWM_CMPCTL) & EHRPWM_CMPCTL_SHDWBFULL) ==
+			 EHRPWM_SHADOW_B_EMPTY))
+	{
+		REG16(baseAddr + EHRPWM_CMPCTL) = (REG16(baseAddr + EHRPWM_CMPCTL)
+				& (~EHRPWM_CMPCTL_SHDWBMODE)) | ((enableShadowWrite <<
+					EHRPWM_CMPCTL_SHDWBMODE_SHIFT) & EHRPWM_CMPCTL_SHDWBMODE);
 
-        HWREGH(baseAddr + EHRPWM_CMPCTL) = (HWREGH(baseAddr + EHRPWM_CMPCTL) &
-            (~EHRPWM_COMPB_LOAD_MASK)) | ((ShadowToActiveLoadTrigger <<
-            EHRPWM_CMPCTL_LOADBMODE_SHIFT) & EHRPWM_COMPB_LOAD_MASK);
+		REG16(baseAddr + EHRPWM_CMPCTL) = (REG16(baseAddr + EHRPWM_CMPCTL) &
+				(~EHRPWM_COMPB_LOAD_MASK)) | ((ShadowToActiveLoadTrigger <<
+						EHRPWM_CMPCTL_LOADBMODE_SHIFT) & EHRPWM_COMPB_LOAD_MASK);
 
-        HWREGH(baseAddr + EHRPWM_CMPB) = CMPBVal & EHRPWM_CMPB_CMPB;
+		REG16(baseAddr + EHRPWM_CMPB) = CMPBVal & EHRPWM_CMPB_CMPB;
 
-        status = TRUE;
-    }
-    return status;
+		status = TRUE;
+	}
+	return status;
 }
 /**
  * \brief  his API configures the action to be taken on B by the Action
@@ -422,27 +503,73 @@ bool EHRPWMLoadCMPB(unsigned int baseAddr,
  *
  **/
 void EHRPWMConfigureAQActionOnB(unsigned int baseAddr,
-                                unsigned int zero,
-                                unsigned int period,
-                                unsigned int CAUp,
-                                unsigned int CADown,
-                                unsigned int CBUp,
-                                unsigned int CBDown,
-                                unsigned int SWForced)
+		unsigned int zero,
+		unsigned int period,
+		unsigned int CAUp,
+		unsigned int CADown,
+		unsigned int CBUp,
+		unsigned int CBDown,
+		unsigned int SWForced)
 {
-    HWREGH(baseAddr + EHRPWM_AQCTLB) =
-        ((CBDown << EHRPWM_AQCTLB_CBD_SHIFT) & EHRPWM_AQCTLB_CBD) |
-        ((CBUp << EHRPWM_AQCTLB_CBU_SHIFT) & EHRPWM_AQCTLB_CBU) |
-        ((CADown << EHRPWM_AQCTLB_CAD_SHIFT) & EHRPWM_AQCTLB_CAD) |
-        ((CAUp << EHRPWM_AQCTLB_CAU_SHIFT) & EHRPWM_AQCTLB_CAU) |
-        ((period << EHRPWM_AQCTLB_PRD_SHIFT) & EHRPWM_AQCTLB_PRD) |
-        ((zero << EHRPWM_AQCTLB_ZRO_SHIFT) & EHRPWM_AQCTLB_ZRO);
+	REG16(baseAddr + EHRPWM_AQCTLB) =
+		((CBDown << EHRPWM_AQCTLB_CBD_SHIFT) & EHRPWM_AQCTLB_CBD) |
+		((CBUp << EHRPWM_AQCTLB_CBU_SHIFT) & EHRPWM_AQCTLB_CBU) |
+		((CADown << EHRPWM_AQCTLB_CAD_SHIFT) & EHRPWM_AQCTLB_CAD) |
+		((CAUp << EHRPWM_AQCTLB_CAU_SHIFT) & EHRPWM_AQCTLB_CAU) |
+		((period << EHRPWM_AQCTLB_PRD_SHIFT) & EHRPWM_AQCTLB_PRD) |
+		((zero << EHRPWM_AQCTLB_ZRO_SHIFT) & EHRPWM_AQCTLB_ZRO);
 
 
-    HWREGH(baseAddr + EHRPWM_AQSFRC) =
-        (HWREGH(baseAddr + EHRPWM_AQSFRC) & (~EHRPWM_AQSFRC_ACTSFB)) |
-     ((SWForced << EHRPWM_AQSFRC_ACTSFB_SHIFT) & EHRPWM_AQSFRC_ACTSFB);
+	REG16(baseAddr + EHRPWM_AQSFRC) =
+		(REG16(baseAddr + EHRPWM_AQSFRC) & (~EHRPWM_AQSFRC_ACTSFB)) |
+		((SWForced << EHRPWM_AQSFRC_ACTSFB_SHIFT) & EHRPWM_AQSFRC_ACTSFB);
 }
+/**
+ * \brief  This API configures the action to be taken on A by the Action
+ *         qualifier module upon receiving the events. This will determine
+ *         the output waveform.
+ *
+ * \param   zero      Action to be taken when CTR = 0
+ * \param   period    Action to be taken when CTR = PRD
+ * \param   CAUp      Action to be taken when CTR = CAUp
+ * \param   CADown    Action to be taken when CTR = CADown
+ * \param   CBUp      Action to be taken when CTR = CBUp
+ * \param   CBDown    Action to be taken when CTR = CBDown
+ * \param   SWForced  Action to be taken when SW forced event has been generated
+ *
+ *     Possible values for the actions are
+ *          - EHRPWM_XXXX_XXXX_DONOTHING \n
+ *          - EHRPWM_XXXX_XXXX_CLEAR \n
+ *          - EHRPWM_XXXX_XXXX_SET \n
+ *          - EHRPWM_XXXX_XXXX_TOGGLE \n
+ *
+ * \return  None
+ *
+ **/
+void EHRPWMConfigureAQActionOnA(unsigned int baseAddr,
+		unsigned int zero,
+		unsigned int period,
+		unsigned int CAUp,
+		unsigned int CADown,
+		unsigned int CBUp,
+		unsigned int CBDown,
+		unsigned int SWForced)
+{
+	REG16(baseAddr + EHRPWM_AQCTLA) =
+		((CBDown << EHRPWM_AQCTLA_CBD_SHIFT) & EHRPWM_AQCTLA_CBD) |
+		((CBUp << EHRPWM_AQCTLA_CBU_SHIFT) & EHRPWM_AQCTLA_CBU) |
+		((CADown << EHRPWM_AQCTLA_CAD_SHIFT) & EHRPWM_AQCTLA_CAD) |
+		((CAUp << EHRPWM_AQCTLA_CAU_SHIFT) & EHRPWM_AQCTLA_CAU) |
+		((period << EHRPWM_AQCTLA_PRD_SHIFT) & EHRPWM_AQCTLA_PRD) |
+		((zero << EHRPWM_AQCTLA_ZRO_SHIFT) & EHRPWM_AQCTLA_ZRO);
+
+
+	REG16(baseAddr + EHRPWM_AQSFRC) = (REG16(baseAddr + EHRPWM_AQSFRC) &
+			(~EHRPWM_AQSFRC_ACTSFA)) | ((SWForced <<
+					EHRPWM_AQSFRC_ACTSFA_SHIFT) & EHRPWM_AQSFRC_ACTSFA);
+}
+
+
 /**
  * \brief   This API selects output mode. This allows to selectively enable or
  *          bypass the dead-band generation for the falling-edge and rising-edge
@@ -459,9 +586,9 @@ void EHRPWMConfigureAQActionOnB(unsigned int baseAddr,
  **/
 void EHRPWMDBOutput(unsigned int baseAddr, unsigned int DBgenOpMode)
 {
-    HWREGH(baseAddr + EHRPWM_DBCTL) =
-        (HWREGH(baseAddr + EHRPWM_DBCTL) & (~EHRPWM_DBCTL_OUT_MODE)) |
-       ((DBgenOpMode << EHRPWM_DBCTL_OUT_MODE_SHIFT) & EHRPWM_DBCTL_OUT_MODE);
+	REG16(baseAddr + EHRPWM_DBCTL) =
+		(REG16(baseAddr + EHRPWM_DBCTL) & (~EHRPWM_DBCTL_OUT_MODE)) |
+		((DBgenOpMode << EHRPWM_DBCTL_OUT_MODE_SHIFT) & EHRPWM_DBCTL_OUT_MODE);
 }
 
 /**
@@ -475,7 +602,7 @@ void EHRPWMDBOutput(unsigned int baseAddr, unsigned int DBgenOpMode)
  **/
 void EHRPWMChopperDisable(unsigned int baseAddr)
 {
-    HWREGH(baseAddr + EHRPWM_PCCTL) &= (~EHRPWM_PCCTL_CHPEN);
+	REG16(baseAddr + EHRPWM_PCCTL) &= (~EHRPWM_PCCTL_CHPEN);
 }
 
 /**
@@ -489,14 +616,14 @@ void EHRPWMChopperDisable(unsigned int baseAddr)
  **/
 void EHRPWMTZTripEventDisable(unsigned int baseAddr, bool osht_CBC)
 {
-     if(EHRPWM_TZ_ONESHOT == osht_CBC)
-     {
-         HWREGH(baseAddr + EHRPWM_TZSEL) &= (~EHRPWM_TZSEL_OSHT1);
-     }
-     if(EHRPWM_TZ_CYCLEBYCYCLE == osht_CBC)
-     {
-         HWREGH(baseAddr + EHRPWM_TZSEL) &= (~EHRPWM_TZSEL_CBC1);
-     }
+	if(EHRPWM_TZ_ONESHOT == osht_CBC)
+	{
+		REG16(baseAddr + EHRPWM_TZSEL) &= (~EHRPWM_TZSEL_OSHT1);
+	}
+	if(EHRPWM_TZ_CYCLEBYCYCLE == osht_CBC)
+	{
+		REG16(baseAddr + EHRPWM_TZSEL) &= (~EHRPWM_TZSEL_CBC1);
+	}
 }
 
 /**
@@ -511,9 +638,9 @@ void EHRPWMTZTripEventDisable(unsigned int baseAddr, bool osht_CBC)
 
 void EHRPWMETIntPrescale(unsigned int baseAddr, unsigned int prescale)
 {
-    HWREGH(baseAddr + EHRPWM_ETPS) =
-        (HWREGH(baseAddr + EHRPWM_ETPS) & (~EHRPWM_ETPS_INTPRD)) |
-       ((prescale << EHRPWM_ETPS_INTPRD_SHIFT) & EHRPWM_ETPS_INTPRD);
+	REG16(baseAddr + EHRPWM_ETPS) =
+		(REG16(baseAddr + EHRPWM_ETPS) & (~EHRPWM_ETPS_INTPRD)) |
+		((prescale << EHRPWM_ETPS_INTPRD_SHIFT) & EHRPWM_ETPS_INTPRD);
 }
 
 /**
@@ -533,9 +660,9 @@ void EHRPWMETIntPrescale(unsigned int baseAddr, unsigned int prescale)
  **/
 void EHRPWMETIntSourceSelect(unsigned int baseAddr, unsigned int selectInt)
 {
-    HWREGH(baseAddr + EHRPWM_ETSEL) =
-        (HWREGH(baseAddr + EHRPWM_ETSEL) & (~EHRPWM_ETSEL_INTSEL)) |
-       ((selectInt << EHRPWM_ETSEL_INTSEL_SHIFT) & EHRPWM_ETSEL_INTSEL);
+	REG16(baseAddr + EHRPWM_ETSEL) =
+		(REG16(baseAddr + EHRPWM_ETSEL) & (~EHRPWM_ETSEL_INTSEL)) |
+		((selectInt << EHRPWM_ETSEL_INTSEL_SHIFT) & EHRPWM_ETSEL_INTSEL);
 }
 
 /**
@@ -548,6 +675,132 @@ void EHRPWMETIntSourceSelect(unsigned int baseAddr, unsigned int selectInt)
  **/
 void EHRPWMHRDisable(unsigned int baseAddr)
 {
-     HWREGH(baseAddr + EHRPWM_HRCNFG) &= (~EHRPWM_HR_EDGEMODE);
+	REG16(baseAddr + EHRPWM_HRCNFG) &= (~EHRPWM_HR_EDGEMODE);
+}
+
+/**
+ * \brief   This API enables the particular PWM module.
+ *
+ * \param   baseAddr    Base Address of the PWM Module Registers.
+ *
+ * \return  None
+ *
+ **/
+void ehrPWM_Enable(unsigned int baseAddr)
+{
+	REG16(baseAddr + EHRPWM_AQCTLA) = 0x2 | (0x3 << 4);
+	REG16(baseAddr + EHRPWM_AQCTLB) = 0x2 | (0x3 << 8);
+	REG16(baseAddr + EHRPWM_TBCNT) = 0;
+	REG16(baseAddr + EHRPWM_TBCTL) = ~0x3;
+}
+
+/**
+ * \brief   This API disables the HR sub-module.
+ *
+ * \param   baseAddr    Base Address of the PWM Module Registers.
+ *
+ * \return  None
+ *
+ **/
+
+void ehrPWM_Disable(unsigned int baseAddr)
+{
+
+	REG16(baseAddr + EHRPWM_TBCTL) = 0x3;
+	REG16(baseAddr + EHRPWM_AQCTLA) = 0x1 | ( 0x3 << 4 );
+	REG16(baseAddr + EHRPWM_AQCTLB) = 0x1 | ( 0x3 << 8 );
+	REG16(baseAddr + EHRPWM_TBCNT)  = 0;
+}
+
+/* PWMSS setting
+ *      set pulse argument of epwm module
+ *
+ *      @param PWMID    : EPWMSS number , 0~2
+ *      @param HZ       : pulse HZ
+ *      @param dutyA    : Duty Cycle in ePWM A
+ *      @param dutyB    : Duty Cycle in ePWM B
+ *
+ *      @return         : 1 for success , 0 for failed
+ *
+ *      @example        :  PWMSS_Setting(0 , 50.0f , 50.0f , 25.0f);      // Generate 50HZ pwm in PWM0 ,
+ *                                                                              // duty cycle is 50% for ePWM0A , 25% for ePWM0B
+ *
+ *      @Note :
+ *              find an number nearst 65535 for TBPRD , to improve duty precision,
+ *
+ *              Using big TBPRD can increase the range of CMPA and CMPB ,
+ *              and it means we can get better precision on duty cycle.
+ *
+ *              EX : 20.25% duty cycle
+ *                  on TBPRD = 62500 , CMPA = 12656.25 ( .25 rejection) , real duty : 20.2496% (12656 /62500)
+ *                  on TBPRD = 6250  , CMPA = 1265.625 ( .625 rejection), real duty : 20.24%   (1265 6250)
+ *                  on TBPRD = 500   , CMPA = 101.25   ( .25 rejection) , real duty : 20.2%    (101/500)
+ *
+ *              Divisor = CLKDIV * HSPCLKDIV
+ *                      1 TBPRD : 10 ns (default)
+ *                      65535 TBPRD : 655350 ns
+ *                      65535 TBPRD : 655350 * Divisor ns  = X TBPRD : Cyclens
+ *
+ *              accrooding to that , we must find a Divisor value , let X nearest 65535 .
+ *              so , Divisor must  Nearest Cyclens/655350
+ */
+
+int PWMSS_Setting(unsigned int baseAddr, float HZ, float dutyA, float dutyB)
+{
+	int param_error =1;
+	if(HZ < 0)
+		param_error =0;
+	if(dutyA < 0.0f || dutyA > 100.0f || dutyB < 0.0f || dutyB > 100.0f)
+		param_error = 0;
+	if(param_error == 0) {
+		printf("ERROR in parameter \n");
+	}
+	dutyA /= 100.0f;
+	dutyB /= 100.0f;
+
+	/*Compute necessary TBPRD*/
+	float Cyclens = 0.0f;
+	float Divisor =0;
+	int i,j;
+	const float CLKDIV_div[] = {1.0,2.0,4.0,8.0,16.0,32.0,64.0,128.0};
+	const float HSPCLKDIV_div[] = {1.0, 2.0, 4.0, 6.0, 8.0, 10.0,12.0, 14.0};
+	int NearCLKDIV =7;
+	int NearHSPCLKDIV =7;
+	int NearTBPRD =0;
+
+	Cyclens = 1000000000.0f / HZ; /** 10^9 /Hz compute time per cycle (ns)
+				       */
+	Divisor = (Cyclens / 655350.0f);  /** am335x provide (128* 14) divider,
+					   *  and per TBPRD means 10ns when divider 
+					   *  and max TBPRD is 65535 so max cycle 
+					   *  is 128 * 8 * 14 * 65535 * 10ns
+					   */
+	if(Divisor > (128 * 14)) {
+		printf("Can't generate %f HZ",HZ);
+		return 0;
+	}
+	else {
+		for (i=0;i<8;i++) {
+			for(j=0 ; j<8; j++) {
+				if((CLKDIV_div[i] * HSPCLKDIV_div[j]) < (CLKDIV_div[NearCLKDIV] 
+							* HSPCLKDIV_div[NearHSPCLKDIV]) && (CLKDIV_div[i] * HSPCLKDIV_div[j] > Divisor)) {
+					NearCLKDIV = i;
+					NearHSPCLKDIV = j;
+				}
+			}
+		}
+		NearTBPRD = (Cyclens / (10.0 * CLKDIV_div[NearCLKDIV] * HSPCLKDIV_div[NearHSPCLKDIV]));
+		/*setting clock divider and freeze time base*/
+		printf("%d",EHRPWM_TBCTL_CTRMODE_STOPFREEZE | (NearCLKDIV << 10) | (NearHSPCLKDIV << 7));
+		REG16(baseAddr + EHRPWM_TBCTL) = EHRPWM_TBCTL_CTRMODE_STOPFREEZE | (NearCLKDIV << 10) | (NearHSPCLKDIV << 7);
+		printf("%d",(unsigned short)((float)NearTBPRD * dutyB));
+		REG16(baseAddr + EHRPWM_CMPB) = (unsigned short)((float)NearTBPRD * dutyB);
+		printf("%d",(unsigned short)((float)NearTBPRD * dutyA));
+		REG16(baseAddr + EHRPWM_CMPA) = (unsigned short)((float)NearTBPRD * dutyA);
+		printf("%d",(unsigned short)NearTBPRD);
+		REG16(baseAddr + EHRPWM_TBPRD) = (unsigned short)NearTBPRD;
+		REG16(baseAddr + EHRPWM_TBCNT) = 0; 
+	}
+	return 1;
 }
 
