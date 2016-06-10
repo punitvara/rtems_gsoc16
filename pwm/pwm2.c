@@ -4,11 +4,11 @@
 #include <bsp/gpio.h>
 #include <bsp/bbb-gpio.h>
 
-#define nitems(x)       (sizeof((x)) / sizeof((x)[0]))
+// #define nitems(x)       (sizeof((x)) / sizeof((x)[0]))
 #define PWMREG(pwm, reg) REG((pwm)->baseaddr + (reg))
 #define PWMREG16(pwm, reg) REG16((pwm)->baseaddr + (reg))
-#define	DEFAULT_PWM_PERIOD	1000
-#define	PWM_CLOCK		100000000UL
+// #define	DEFAULT_PWM_PERIOD	1000
+// #define	PWM_CLOCK		100000000UL
  
 const unsigned int PWMSS_AddressOffset[]={PWMSS0_MMAP_ADDR,
                                           PWMSS1_MMAP_ADDR,
