@@ -1005,10 +1005,6 @@ void pwm_configure(unsigned int baseAddr, float freq,bool enableShadowWrite,int 
 {
 unsigned int prescaler,period,hspclkdiv,counter=0,clkdiv,x;
 prescaler = BASE_CLOCK/tbclk;
-if(prescaler > (128 * 14)) {
-                printf("Can't generate %f HZ",freq);
-        }
-        else {
 		if(prescaler > (0xE)) {
                         hspclkdiv = TBCTL_HSPCLKDIV_DIVBY14;
                         clkdiv = (int)prescaler/14;
@@ -1061,7 +1057,7 @@ if(prescaler > (128 * 14)) {
 		x = REG16(baseAddr + EHRPWM_TBCTL);
 		printk("reading TBCTL = %x \n",x);
 
-	}
+	
 	period = tbclk / freq;
 	     if(EHRPWM_COUNT_UP_DOWN == counterDir)
      {
