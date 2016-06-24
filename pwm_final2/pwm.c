@@ -29,6 +29,8 @@
  * @brief This function select PWM module to be enabled
  * 
  * @param pwm_id It is the instance number of EPWM of pwm sub system.
+ * 
+ * @return Base Address of respective pwm instant.
 */
 
 static uint32_t select_pwmss(uint32_t pwm_id)
@@ -102,7 +104,9 @@ static void epwm_pinmux_setup(uint32_t pwm_id)
  *
  * @param   instance  It is the instance number of EPWM of pwmsubsystem.
  *
+ * @return  true if successful
  **/
+
 static bool pwmss_tbclk_enable(unsigned int instance)
 {
 uint32_t enable_bit;
@@ -136,7 +140,7 @@ bool is_valid = true;
 /**
  * @brief   This functions enables clock for EHRPWM module in PWMSS subsystem.
  *
- * @param   baseAdd   It is the Memory address of the PWMSS instance used.
+ * @param   pwm_id  It is the instance number of EPWM of pwm sub system.
  *
  * @return  None.
  *
@@ -192,14 +196,24 @@ static void module_clk_config(uint32_t pwmss_id)
  *
  * @param PWMSS_ID It is the instance number of EPWM of pwm sub system.
  * 
- * @return None
+ * @return true if successful
  **/
-void pwm_init(uint32_t pwmss_id)
+
+bool beagle_pwm_init(uint32_t pwmss_id)
 {
+  bool status = true;
+  if(pwmss_id <3 & pwmss_id >=0) 
+  {
   module_clk_config(pwmss_id);
   epwm_pinmux_setup(pwmss_id);
   epwm_clock_enable(pwmss_id);
   pwmss_tbclk_enable(pwmss_id);
+  return status;
+  }
+  else {
+	status =false;
+  return status;
+  }
 }
 
 
@@ -239,7 +253,7 @@ void pwm_init(uint32_t pwmss_id)
  *              so , Divisor must  Nearest Cyclens/655350
  */
 
-int pwmss_setting(uint32_t pwm_id, float pwm_freq, float dutyA, float dutyB)
+int beagle_pwmss_setting(uint32_t pwm_id, float pwm_freq, float dutyA, float dutyB)
 {	
   uint32_t baseAddr;
   int param_error =1;
@@ -318,37 +332,53 @@ int pwmss_setting(uint32_t pwm_id, float pwm_freq, float dutyA, float dutyB)
 /**
  * @brief   This API enables the particular PWM module.
  *
- * @param   baseAddr    Base Address of the PWM Module Registers.
+ * @param   pwmid  It is the instance number of EPWM of pwm sub system.
  *
- * @return  None
+ * @return  true if successful
  *
  **/
-void ehrpwm_enable(uint32_t pwmid)
+bool beagle_ehrpwm_enable(uint32_t pwmid)
 {
+  bool status = true;
   uint32_t baseAddr;
+  if(pwmid<3 & pwmid >=0) {
   baseAddr = select_pwmss(pwmid);
   REG16(baseAddr + EPWM_AQCTLA) = EPWM_AQCTLA_ZRO_EPWMXAHIGH | (EPWM_AQCTLA_CAU_EPWMXATOGGLE << EPWM_AQCTLA_CAU_SHIFT);
   REG16(baseAddr + EPWM_AQCTLB) = EPWM_AQCTLB_ZRO_EPWMXBHIGH | (EPWM_AQCTLB_CBU_EPWMXBTOGGLE << EPWM_AQCTLB_CBU_SHIFT);
   REG16(baseAddr + EPWM_TBCNT) = 0;
   REG16(baseAddr + EPWM_TBCTL) |=  TBCTL_FREERUN  | TBCTL_CTRMODE_UP;
+  return status;
+  }
+  else {
+	status =false;
+	return status;
+  }
 }
 
 /**
  * @brief   This API disables the HR sub-module.
  *
- * @param   baseAddr    Base Address of the PWM Module Registers.
+ * @param   pwmid  It is the instance number of EPWM of pwm sub system.
  *
- * @return  None
+ * @return  true if successful
  *
  **/
 
-void ehrpwm_disable(uint32_t pwmid)
+bool beagle_ehrpwm_disable(uint32_t pwmid)
 {
+  bool status = true;
   uint32_t baseAddr;
+  if(pwmid<3 & pwmid >=0) {
   baseAddr = select_pwmss(pwmid);
   REG16(baseAddr + EPWM_TBCTL) = EPWM_TBCTL_CTRMODE_STOPFREEZE;
   REG16(baseAddr + EPWM_AQCTLA) = EPWM_AQCTLA_ZRO_EPWMXALOW | (EPWM_AQCTLA_CAU_EPWMXATOGGLE << EPWM_AQCTLA_CAU_SHIFT);
   REG16(baseAddr + EPWM_AQCTLB) = EPWM_AQCTLA_ZRO_EPWMXBLOW | (EPWM_AQCTLB_CBU_EPWMXBTOGGLE << EPWM_AQCTLB_CBU_SHIFT);
   REG16(baseAddr + EPWM_TBCNT)  = 0;
+  return status;
+  }
+  else {
+ 	status = false;
+	return status;
+  }
 }
 
