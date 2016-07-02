@@ -62,24 +62,23 @@ uint32_t baseAddr=0;
 	return 0;	
    }
 }
-
+/*
 bool beagle_epwm_pinmux_setup(uint32_t pin_no, uint32_t pwm_id)
 {
-  if((pwm_id <3) && (pwm_id >=0)) {
   switch(pwm_id)  {
 	case BBB_PWMSS2:
 		switch(pin_no) { 
 			case BBB_P8_13_2B:
-		 		REG(AM335X_PADCONF_BASE + BBB_CONTROL_CONF_GPMC_AD(9)) = BBB_MUXMODE(BBB_MUX4);
+		 		REG(AM335X_PADCONF_BASE + BBB_CONTROL_CONF_GPMC_AD(9)) = BBB_MUXMODE(BBB_P8_13_MUX_PWM);
 		 		break;
 			case BBB_P8_19_2A:
-				REG(AM335X_PADCONF_BASE + BBB_CONTROL_CONF_GPMC_AD(8)) = BBB_MUXMODE(BBB_MUX4);
+				REG(AM335X_PADCONF_BASE + BBB_CONTROL_CONF_GPMC_AD(8)) = BBB_MUXMODE(BBB_P8_19_MUX_PWM);
 		 		break;
 			case BBB_P8_45_2A:
-		 		REG(AM335X_PADCONF_BASE + BBB_CONTROL_CONF_LCD_DATA(0)) = BBB_MUXMODE(BBB_MUX3);
+		 		REG(AM335X_PADCONF_BASE + BBB_CONTROL_CONF_LCD_DATA(0)) = BBB_MUXMODE(BBB_P8_45_MUX_PWM);
 		 		break;
 			case BBB_P8_46_2B:
-		 		REG(AM335X_PADCONF_BASE + BBB_CONTROL_CONF_LCD_DATA(1)) = BBB_MUXMODE(BBB_MUX3);
+		 		REG(AM335X_PADCONF_BASE + BBB_CONTROL_CONF_LCD_DATA(1)) = BBB_MUXMODE(BBB_P8_46_MUX_PWM);
 		 		break;
  			default :
 				printf("Invalid pin for module 2\n");
@@ -89,16 +88,16 @@ bool beagle_epwm_pinmux_setup(uint32_t pin_no, uint32_t pwm_id)
 	case BBB_PWMSS1:
 		switch(pin_no) {
 			case BBB_P8_34_1B:
-		 		REG(AM335X_PADCONF_BASE + BBB_CONTROL_CONF_LCD_DATA(11)) = BBB_MUXMODE(BBB_MUX2);
+		 		REG(AM335X_PADCONF_BASE + BBB_CONTROL_CONF_LCD_DATA(11)) = BBB_MUXMODE(BBB_P8_34_MUX_PWM);
 		 		break;
 			case BBB_P8_36_1A:
-		 		REG(AM335X_PADCONF_BASE + BBB_CONTROL_CONF_LCD_DATA(10)) = BBB_MUXMODE(BBB_MUX2);
+		 		REG(AM335X_PADCONF_BASE + BBB_CONTROL_CONF_LCD_DATA(10)) = BBB_MUXMODE(BBB_P8_36_MUX_PWM);
 		 		break;
 			case BBB_P9_14_1A:
-		 		REG(AM335X_PADCONF_BASE + BBB_CONTROL_CONF_GPMC_AD(2)) = BBB_MUXMODE(BBB_MUX6);
+		 		REG(AM335X_PADCONF_BASE + BBB_CONTROL_CONF_GPMC_AD(2)) = BBB_MUXMODE(BBB_P9_14_MUX_PWM);
 		 		break;
 			case BBB_P9_16_1B:
-		 		REG(AM335X_PADCONF_BASE + BBB_CONTROL_CONF_GPMC_AD(3)) = BBB_MUXMODE(BBB_MUX6);
+		 		REG(AM335X_PADCONF_BASE + BBB_CONTROL_CONF_GPMC_AD(3)) = BBB_MUXMODE(BBB_P9_14_MUX_PWM);
 		 		break;
 			default :
 				printf("Invalid pin for module 1\n");
@@ -108,16 +107,16 @@ bool beagle_epwm_pinmux_setup(uint32_t pin_no, uint32_t pwm_id)
 	case BBB_PWMSS0:
 		switch(pin_no) {
 			case BBB_P9_21_0B:
-		 		REG(AM335X_PADCONF_BASE + AM335X_CONF_SPI0_D0) = BBB_MUXMODE(BBB_MUX3);
+		 		REG(AM335X_PADCONF_BASE + AM335X_CONF_SPI0_D0) = BBB_MUXMODE(BBB_P9_21_MUX_PWM);
 		 		break;
 			case BBB_P9_22_0A:
-		 		REG(AM335X_PADCONF_BASE + AM335X_CONF_SPI0_SCLK) = BBB_MUXMODE(BBB_MUX3);
+		 		REG(AM335X_PADCONF_BASE + AM335X_CONF_SPI0_SCLK) = BBB_MUXMODE(BBB_P9_22_MUX_PWM);
 		 		break;
 			case BBB_P9_29_0B:
-		 		REG(AM335X_PADCONF_BASE + AM335X_CONF_MCASP0_FSX) = BBB_MUXMODE(BBB_MUX1);
+		 		REG(AM335X_PADCONF_BASE + AM335X_CONF_MCASP0_FSX) = BBB_MUXMODE(BBB_P9_29_MUX_PWM);
 		 		break;
 			case BBB_P9_31_0A:
-		 		REG(AM335X_PADCONF_BASE + AM335X_CONF_MCASP0_ACLKX) = BBB_MUXMODE(BBB_MUX1);
+		 		REG(AM335X_PADCONF_BASE + AM335X_CONF_MCASP0_ACLKX) = BBB_MUXMODE(BBB_P9_31_MUX_PWM);
 		 		break;
 			default:
 				printf("Invalid pin for module 0\n");
@@ -128,11 +127,48 @@ bool beagle_epwm_pinmux_setup(uint32_t pin_no, uint32_t pwm_id)
 	default:
 		printf("Invalid PWM sub system\n");
 		return false;
+  }
 }
-return true;
- } else {
- return false;
- }
+*/
+bool beagle_epwm_pinmux_setup(uint32_t pin_no, uint32_t pwm_id)
+{
+bool is_valid = true;
+  if(pwm_id == BBB_PWMSS0) {
+	if (pin_no == BBB_P9_21_0B)
+	  REG(AM335X_PADCONF_BASE + AM335X_CONF_SPI0_D0) = BBB_MUXMODE(BBB_P9_21_MUX_PWM);
+	else if (pin_no == BBB_P9_22_0A)
+	  REG(AM335X_PADCONF_BASE + AM335X_CONF_SPI0_SCLK) = BBB_MUXMODE(BBB_P9_22_MUX_PWM);
+	else if (pin_no == BBB_P9_29_0B)
+	  REG(AM335X_PADCONF_BASE + AM335X_CONF_MCASP0_FSX) = BBB_MUXMODE(BBB_P9_29_MUX_PWM);
+	else if (pin_no == BBB_P9_31_0A)
+	  REG(AM335X_PADCONF_BASE + AM335X_CONF_MCASP0_ACLKX) = BBB_MUXMODE(BBB_P9_31_MUX_PWM);
+	else 
+	  is_valid = false;
+  } else if (pwm_id == BBB_PWMSS1) {
+	if (pin_no == BBB_P8_34_1B)
+	  REG(AM335X_PADCONF_BASE + BBB_CONTROL_CONF_LCD_DATA(11)) = BBB_MUXMODE(BBB_P8_34_MUX_PWM);
+	else if (pin_no == BBB_P8_36_1A)
+	  REG(AM335X_PADCONF_BASE + BBB_CONTROL_CONF_LCD_DATA(10)) = BBB_MUXMODE(BBB_P8_36_MUX_PWM);
+	else if (pin_no == BBB_P9_14_1A)
+	  REG(AM335X_PADCONF_BASE + BBB_CONTROL_CONF_GPMC_AD(2)) = BBB_MUXMODE(BBB_P9_14_MUX_PWM);
+	else if (pin_no == BBB_P9_16_1B)
+	  REG(AM335X_PADCONF_BASE + BBB_CONTROL_CONF_GPMC_AD(3)) = BBB_MUXMODE(BBB_P9_14_MUX_PWM);
+	else 
+	  is_valid = false;
+  } else if (pwm_id == BBB_PWMSS2) {
+	if (pin_no == BBB_P8_13_2B)
+	  REG(AM335X_PADCONF_BASE + BBB_CONTROL_CONF_GPMC_AD(9)) = BBB_MUXMODE(BBB_P8_13_MUX_PWM);
+	else if (pin_no == BBB_P8_19_2A)
+	  REG(AM335X_PADCONF_BASE + BBB_CONTROL_CONF_GPMC_AD(8)) = BBB_MUXMODE(BBB_P8_19_MUX_PWM);
+	else if (pin_no == BBB_P8_45_2A)
+	  REG(AM335X_PADCONF_BASE + BBB_CONTROL_CONF_LCD_DATA(0)) = BBB_MUXMODE(BBB_P8_45_MUX_PWM);
+	else if (pin_no == BBB_P8_46_2B)
+	  REG(AM335X_PADCONF_BASE + BBB_CONTROL_CONF_LCD_DATA(1)) = BBB_MUXMODE(BBB_P8_46_MUX_PWM);
+	else
+	  is_valid = false;
+  } else 
+	is_valid = false;
+  return is_valid;
 }
 
 /**
@@ -270,12 +306,12 @@ bool beagle_pwm_init(uint32_t pwmss_id)
   }
 }
 
-int beagle_pwmss_setting(uint32_t pwm_id, float pwm_freq, float dutyA, float dutyB)
+int beagle_pwmss_configure(uint32_t pwm_id, float pwm_freq, float dutyA, float dutyB)
 {	
   uint32_t baseAddr;
   int status = 1;
 	
-  if(pwm_freq < 0) {
+  if(pwm_freq <= 0.5) {
 	status =0;
 	return status;
   }
