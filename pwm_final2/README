@@ -1,0 +1,69 @@
+Pulse Width Modulation uses system frequency of Beagle Bone Black.
+
+System frequency = SYSCLKOUT, that is, CPU clock. TBCLK = SYSCLKOUT(By Default)
+SYCLKOUT = 100 MHz
+
+Please visit following link to check why SYSCLKDIV = 100MHz:
+https://groups.google.com/forum/#!topic/beagleboard/Ed2J9Txe_E4
+(Refer TRM Table 15-41 as well)
+
+To generate different frequencies with help of PWM module , SYSCLKOUT need to be
+scaled down which will act as TBCLK and TBCLK will be base clock for the pwm
+sub system.
+
+TBCLK = SYSCLKOUT/(HSPCLKDIV * CLKDIV)
+
+                 |----------------| 
+                 |     clock      | 
+ SYSCLKOUT--->   |                |---> TBCLK 
+                 |   prescale     |
+                 |----------------|         
+                   ^           ^
+                   |           |
+ TBCTL[CLKDIV]-----            ------TBCTL[HSPCLKDIV]
+
+CLKDIV and HSPCLKDIV bits are part of TBCTL registerm (Refer TRM).
+Please use following values of CLKDIV to scale down sysclk respectively
+0h (R/W) = /1 
+1h (R/W) = /2
+2h (R/W) = /4
+3h (R/W) = /8
+4h (R/W) = /16
+5h (R/W) = /32
+6h (R/W) = /64
+7h (R/W) = /128
+
+Please use following value of HSPCLKDIV to scale down sysclk respectively
+
+0h (R/W) = /1
+1h (R/W) = /2
+2h (R/W) = /4
+3h (R/W) = /6
+4h (R/W) = /8
+5h (R/W) = /10
+6h (R/W) = /12
+7h (R/W) = /14
+
+How to generate frequency ?
+
+freq = 1/Period
+TBPRD register is responsible to generate frequency.
+
+By default TBCLK = SYSCLKOUT = 100 MHz
+
+Here by default period is 1/100MHz = 10 nsec
+
+Following example shows value to be loaded into TBPRD
+ 
+e.g. TBPRD = 1 = 1 count
+  count x Period = 1 x 1ns = 1ns
+  freq = 1/Period = 1 / 1ns = 100 MHz
+
+For duty cycle CMPA and CMPB are the responsible registers.
+
+To generate single with 50% Duty cycle & 100MHz freq.
+ 
+ CMPA = count x Duty Cycle
+       = TBPRD x Duty Cycle
+       = 1 x 50/100
+       = 0.2
