@@ -43,19 +43,21 @@ typedef enum{
   BBB_PWMSS_COUNT
 }BBB_PWMSS;
 
-#define BBB_P8_13_2B  3
-#define BBB_P8_19_2A  4
-#define BBB_P8_45_2A  5
-#define BBB_P8_46_2B  6
-#define BBB_P8_34_1B  7
-#define BBB_P8_36_1A  8
-#define BBB_P9_14_1A  9
-#define BBB_P9_16_1B  10
-#define BBB_P9_21_0B  11
-#define BBB_P9_22_0A  12
-#define BBB_P9_29_0B  13
-#define BBB_P9_31_0A  14
- 
+typedef enum{
+  BBB_P8_13_2B = 3,
+  BBB_P8_19_2A,
+  BBB_P8_45_2A,
+  BBB_P8_46_2B,
+  BBB_P8_34_1B,
+  BBB_P8_36_1A,
+  BBB_P9_14_1A,
+  BBB_P9_16_1B,
+  BBB_P9_21_0B,
+  BBB_P9_22_0A,
+  BBB_P9_29_0B,
+  BBB_P9_31_0A
+}bbb_pwm_pin_t;
+
 #define BBB_P8_13_MUX_PWM 4 
 #define BBB_P8_19_MUX_PWM 4
 #define BBB_P8_45_MUX_PWM 3
@@ -90,13 +92,13 @@ bool beagle_pwm_init(BBB_PWMSS pwmss_id);
  *
  *      @param pwm_id    : EPWMSS number , 0~2
  *      @param pwm_freq : frequency to be generated
- *      @param dutyA    : Duty Cycle in ePWM A
- *      @param dutyB    : Duty Cycle in ePWM B
+ *      @param dutyA    : Duty Cycle(in percentage) in PWM channel A
+ *      @param dutyB    : Duty Cycle(in percentage) in PWM channel B
  *
  *      @return         : 1 for success
  *      @return         : 0 for failed
  *
- *      @example        :  PWMSS_Setting(0 , 50.0f , 50.0f , 25.0f);      // Generate 50HZ pwm in PWM0 ,
+ *      @example        :  beagle_pwm_configure(0 , 50.0f , 50.0f , 25.0f);      // Generate 50HZ pwm in PWM0 ,
  *                                                                              // duty cycle is 50% for ePWM0A , 25% for ePWM0B
  *
  *      @Note :
@@ -113,12 +115,12 @@ bool beagle_pwm_init(BBB_PWMSS pwmss_id);
  *              Divisor = CLKDIV * HSPCLKDIV
  *                      1 TBPRD : 10 ns (default)
  *                      65535 TBPRD : 655350 ns
- *                      65535 TBPRD : 655350 * Divisor ns  = X TBPRD : Cyclens
+ *                      65535 TBPRD : 655350 * Divisor ns  = X TBPRD : Cycle
  *
  *              accrooding to that , we must find a Divisor value , let X nearest 65535 .
- *              so , Divisor must  Nearest Cyclens/655350
+ *              so , Divisor must  Nearest Cycle/655350
  */
-int beagle_pwm_configure(BBB_PWMSS pwm_id, float pwm_freq, float dutyA, float dutyB);
+int beagle_pwm_configure(BBB_PWMSS pwm_id, float pwm_freq, float duty_a, float duty_b);
 
 /**
  * @brief   This API enables the particular PWM module.
@@ -154,7 +156,7 @@ bool beagle_pwm_disable(BBB_PWMSS pwmid);
  * @return  false if fail
  *
  **/
-bool beagle_pwm_pinmux_setup(uint32_t pin_no, BBB_PWMSS pwm_id);
+bool beagle_pwm_pinmux_setup(bbb_pwm_pin_t pin_no, BBB_PWMSS pwm_id);
 
 #ifdef __cplusplus
 }
