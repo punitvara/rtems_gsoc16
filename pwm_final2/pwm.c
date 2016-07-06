@@ -337,13 +337,20 @@ unsigned int reg_value;
   if (id_is_valid) {
     reg_value = REG(AM335X_CM_PER_ADDR + AM335X_PWMSS_CTRL);
     value = reg_value & (1 << pwm_id);
-    if(!value)
+    if(!value) {
       status = false;
-    else {
+    }  else  {
       const uint32_t baseAddr = select_pwm(pwm_id);
       reg_value = REG(baseAddr + AM335X_PWMSS_CLKSTATUS);
       value = reg_value >>8 & 0x1;
+      if(value){
+      // Do nothing 
+      } else {
+      status = false;
+      }
     }	
+  } else {
+  status = false;
   }
 return status;
 }
