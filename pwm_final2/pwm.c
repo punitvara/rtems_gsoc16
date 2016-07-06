@@ -327,6 +327,27 @@ bool beagle_pwm_disable(BBB_PWMSS pwmid)
   }
 }
 
+bool beagle_pwmss_is_running(unsigned int pwm_id)
+{
+const bool id_is_valid = pwm_id < BBB_PWMSS_COUNT;
+bool value;
+bool status = true;
+unsigned int reg_value;
+
+  if (id_is_valid) {
+    reg_value = REG(AM335X_CM_PER_ADDR + AM335X_PWMSS_CTRL);
+    value = reg_value & (1 << pwm_id);
+    if(!value)
+      status = false;
+    else {
+      const uint32_t baseAddr = select_pwm(pwm_id);
+      reg_value = REG(baseAddr + AM335X_PWMSS_CLKSTATUS);
+      value = reg_value >>8 & 0x1;
+    }	
+  }
+return status;
+}
+
 #endif
 
 /* For support of BeagleboardxM */
@@ -357,4 +378,8 @@ bool beagle_pwm_pinmux_setup(bbb_pwm_pin_t pin_no, BBB_PWMSS pwm_id)
   return false;
 }
 
+bool beagle_pwmss_is_running(unsigned int pwm_id)
+{
+  return false;
+}
 #endif
