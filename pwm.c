@@ -231,21 +231,16 @@ int beagle_pwm_configure(BBB_PWMSS pwm_id, float pwm_freq, float duty_a, float d
   const float CLKDIV_div[] = {1.0,2.0,4.0,8.0,16.0,32.0,64.0,128.0};
   const float HSPCLKDIV_div[] = {1.0, 2.0, 4.0, 6.0, 8.0, 10.0,12.0, 14.0};
   int NearCLKDIV =7,NearHSPCLKDIV =7,NearTBPRD =0;
-  //const uint16_t clkdiv_clear = (REG16(baseAddr + AM335X_EPWM_TBCTL) &
-  //(~AM335X_EPWM_TBCTL_CLKDIV));
-  //const uint16_t clkdiv_write = ((NearCLKDIV
-  //<< AM335X_EPWM_TBCTL_CLKDIV_SHIFT) & AM335X_EPWM_TBCTL_CLKDIV);
  
-  if(pwm_freq <= BBB_PWM_FREQ_THRESHOLD) {
-        status =0;
+  if (pwm_freq <= BBB_PWM_FREQ_THRESHOLD) {
+    status =0;
   }
-  if(duty_a < 0.0f || duty_a > 100.0f || duty_b < 0.0f || duty_b > 100.0f) {
-        status = 0;
+  
+  if (duty_a < 0.0f || duty_a > 100.0f || duty_b < 0.0f || duty_b > 100.0f) {
+    status = 0;
   }
   duty_a /= 100.0f;
   duty_b /= 100.0f;
-
-  /*Compute necessary TBPRD*/
   
   /** 10^9 /Hz compute time per cycle (ns) */
   cycle = 1000000000.0f / pwm_freq;
@@ -253,45 +248,44 @@ int beagle_pwm_configure(BBB_PWMSS pwm_id, float pwm_freq, float duty_a, float d
   /** am335x provide (128* 14) divider and per TBPRD means 10ns when divider 
     * and max TBPRD is 65535 so max cycle is 128 * 8 * 14 * 65535 * 10ns */
   divisor = (cycle / 655350.0f);
-  if(divisor > (128 * 14)) {
-        printf("Can't generate %f HZ",pwm_freq);
-        return 0;
+  if (divisor > (128 * 14)) {
+    return 0;
   }
   else {
-        for (i=0;i<8;i++) {
-                for(j=0 ; j<8; j++) {
-                        if((CLKDIV_div[i] * HSPCLKDIV_div[j]) < (CLKDIV_div[NearCLKDIV]
-                                                * HSPCLKDIV_div[NearHSPCLKDIV]) && (CLKDIV_div[i] * HSPCLKDIV_div[j] > divisor)) {
-                                NearCLKDIV = i;
-                                NearHSPCLKDIV = j;
-                        }
-                }
-        }
+    for (i=0;i<8;i++) {
+      for(j=0 ; j<8; j++) {
+        if((CLKDIV_div[i] * HSPCLKDIV_div[j]) < (CLKDIV_div[NearCLKDIV]
+                            * HSPCLKDIV_div[NearHSPCLKDIV]) && (CLKDIV_div[i] * HSPCLKDIV_div[j] > divisor)) {
+          NearCLKDIV = i;
+          NearHSPCLKDIV = j;
+         }
+      }
+    }
   
   baseAddr = select_pwm(pwm_id);
+  
+  REG16(baseAddr + AM335X_EPWM_TBCTL) &= ~(AM335X_TBCTL_CLKDIV_MASK | AM335X_TBCTL_HSPCLKDIV_MASK);
   const uint16_t clkdiv_clear = (REG16(baseAddr + AM335X_EPWM_TBCTL) &
   (~AM335X_EPWM_TBCTL_CLKDIV));
   const uint16_t clkdiv_write = ((NearCLKDIV
   << AM335X_EPWM_TBCTL_CLKDIV_SHIFT) & AM335X_EPWM_TBCTL_CLKDIV);
-
-  REG16(baseAddr + AM335X_EPWM_TBCTL) &= ~(AM335X_TBCTL_CLKDIV_MASK | AM335X_TBCTL_HSPCLKDIV_MASK);
-
   REG16(baseAddr + AM335X_EPWM_TBCTL) = clkdiv_clear | clkdiv_write;
-  
-  REG16(baseAddr + AM335X_EPWM_TBCTL) = (REG16(baseAddr + AM335X_EPWM_TBCTL) &
-  (~AM335X_EPWM_TBCTL_HSPCLKDIV)) | ((NearHSPCLKDIV <<
+  const uint16_t hspclkdiv_clear =  (REG16(baseAddr + AM335X_EPWM_TBCTL) &
+  (~AM335X_EPWM_TBCTL_HSPCLKDIV));
+  const uint16_t hspclkdiv_write = ((NearHSPCLKDIV <<
   AM335X_EPWM_TBCTL_HSPCLKDIV_SHIFT) & AM335X_EPWM_TBCTL_HSPCLKDIV);
-
+  REG16(baseAddr + AM335X_EPWM_TBCTL) = hspclkdiv_clear | hspclkdiv_write;
   NearTBPRD = (cycle / (10.0 * CLKDIV_div[NearCLKDIV] * HSPCLKDIV_div[NearHSPCLKDIV]));
-  
-  REG16(baseAddr + AM335X_EPWM_TBCTL) = (REG16(baseAddr + AM335X_EPWM_TBCTL) &
-  (~AM335X_EPWM_PRD_LOAD_SHADOW_MASK)) | (((bool)AM335X_EPWM_SHADOW_WRITE_DISABLE <<
+  const uint16_t shadow_mask =  (REG16(baseAddr + AM335X_EPWM_TBCTL) &
+  (~AM335X_EPWM_PRD_LOAD_SHADOW_MASK));
+  const uint16_t shadow_disable =  (((bool)AM335X_EPWM_SHADOW_WRITE_DISABLE <<
   AM335X_EPWM_TBCTL_PRDLD_SHIFT) & AM335X_EPWM_PRD_LOAD_SHADOW_MASK);
-
-  REG16(baseAddr + AM335X_EPWM_TBCTL) = (REG16(baseAddr + AM335X_EPWM_TBCTL) &
-  (~AM335X_EPWM_COUNTER_MODE_MASK)) | (((unsigned int)AM335X_EPWM_COUNT_UP <<
+  REG16(baseAddr + AM335X_EPWM_TBCTL) = shadow_mask | shadow_disable;
+  const uint16_t counter_mask = (REG16(baseAddr + AM335X_EPWM_TBCTL) &
+  (~AM335X_EPWM_COUNTER_MODE_MASK));
+  const uint16_t counter_shift = (((unsigned int)AM335X_EPWM_COUNT_UP <<
   AM335X_TBCTL_CTRMODE_SHIFT) &  AM335X_EPWM_COUNTER_MODE_MASK);
-
+  REG16(baseAddr + AM335X_EPWM_TBCTL) = counter_mask | counter_shift;
   /*setting clock divider and freeze time base*/
   REG16(baseAddr + AM335X_EPWM_CMPB) = (unsigned short)((float)(NearTBPRD) * duty_b);
   REG16(baseAddr + AM335X_EPWM_CMPA) = (unsigned short)((float)(NearTBPRD) * duty_a);
@@ -336,34 +330,64 @@ bool beagle_pwm_disable(BBB_PWMSS pwmid)
   return status;
 }
 
+int PWMSS_TB_clock_check(unsigned int PWMSS_ID)
+{
+  unsigned int reg_value,value;
+	
+  /*control module check*/
+  reg_value = REG(AM335X_CONTROL_MODULE + AM335X_PWMSS_CTRL);
+	
+  value = reg_value & (1 << PWMSS_ID);
+  printf("\n PWMSS_CTRL =  %d and reg_value = %d \n",value,reg_value);
+  return (reg_value & (1 << PWMSS_ID));
+}
+
+unsigned int pwm_clock_en_status(unsigned int pwmid)
+{
+  unsigned int status;
+  const uint32_t baseAddr = select_pwm(pwmid);
+  status = REG(baseAddr + AM335X_PWMSS_CLKSTATUS);
+
+  status = status << 0x08;
+  printf("\n status = %d \n",status);
+  return status;
+}
+
+unsigned int pwm_clock_dis_status(unsigned int pwmid)
+{
+    unsigned int status;
+    const uint32_t baseAddr = select_pwm(pwmid);
+    status = REG(baseAddr + AM335X_PWMSS_CLKSTATUS);
+
+    status = status << 0x09;
+    printf("\n Disable status = %d \n",status);
+    return status;
+}
+
+
+/*
 bool beagle_pwmss_is_running(unsigned int pwm_id)
 {
-const bool id_is_valid = pwm_id < BBB_PWMSS_COUNT;
-bool value;
-bool status = true;
-unsigned int reg_value;
+  const bool id_is_valid = pwm_id < BBB_PWMSS_COUNT;
+  unsigned int reg_value;
+  bool status = true; 
 
   if (id_is_valid) {
-    reg_value = REG(AM335X_CM_PER_ADDR + AM335X_PWMSS_CTRL);
-    value = reg_value & (1 << pwm_id);
-    if(!value) {
-      status = false;
-    }  else  {
       const uint32_t baseAddr = select_pwm(pwm_id);
       reg_value = REG(baseAddr + AM335X_PWMSS_CLKSTATUS);
-      value = reg_value >>8 & 0x1;
-      if(value){
-      // Do nothing 
-      } else {
-      status = false;
+      reg_value = reg_value << 0x08;
+      if(reg_value == 0) {
+      printf("second test value = %d \n",reg_value);
+      status =false;
+      } else { //do nothing
       }
-    }	
+      
   } else {
   status = false;
   }
-return status;
+  return status;
 }
-
+*/
 #endif
 
 /* For support of BeagleboardxM */
@@ -397,5 +421,18 @@ bool beagle_pwm_pinmux_setup(bbb_pwm_pin_t pin_no, BBB_PWMSS pwm_id)
 bool beagle_pwmss_is_running(unsigned int pwm_id)
 {
   return false;
+}
+
+int PWMSS_TB_clock_check(unsigned int PWMSS_ID)
+{
+return -1;
+}
+unsigned int pwm_clock_en_status(unsigned int pwmid)
+{
+return -1;
+}
+unsigned int pwm_clock_dis_status(unsigned int pwmid)
+{
+return -1;
 }
 #endif
