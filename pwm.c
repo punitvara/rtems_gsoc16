@@ -7,7 +7,7 @@
  */
 
 /**
- * Copyright (c) 2016 Punit Vara <punitvara at gmail.com>
+ * Copyright (c) 2016 Punit Vara <punitvara@gmail.com>
  *
  * The license and distribution terms for this file may be
  * found in the file LICENSE in this distribution or at
@@ -33,7 +33,7 @@
 #if IS_AM335X
 
 /*
- * @brief This function select PWM module to be enabled
+ * @brief This function selects EPWM module to be enabled
  * 
  * @param pwm_id It is the instance number of EPWM of pwm sub system.
  * 
@@ -42,6 +42,7 @@
 static uint32_t select_pwm(BBB_PWMSS pwm_id)
 {
   uint32_t baseAddr=0;
+  
   if (pwm_id == BBB_PWMSS0) {
     baseAddr = AM335X_EPWM_0_REGS;
   } else if (pwm_id == BBB_PWMSS1) {
@@ -54,9 +55,34 @@ static uint32_t select_pwm(BBB_PWMSS pwm_id)
   return baseAddr;	
 }
 
+/*
+ * @brief This function selects PWM Sub system to be enabled
+ *  
+ * @param pwmss_id  The instance number of ePWMSS whose system clocks
+ *                  have to be configured.
+ * 
+ * @return Base Address of respective pwmss instant.
+*/
+static uint32_t select_pwmss(BBB_PWMSS pwmss_id)
+{
+  uint32_t baseAddr=0;
+  
+  if (pwmss_id == BBB_PWMSS0) {
+    baseAddr = AM335X_PWMSS0_MMAP_ADDR;
+  } else if (pwmss_id == BBB_PWMSS1) {
+    baseAddr = AM335X_PWMSS1_MMAP_ADDR;
+  } else if (pwmss_id == BBB_PWMSS2) {
+    baseAddr = AM335X_PWMSS1_MMAP_ADDR;
+  } else {
+    baseAddr = 0;
+  }
+  return baseAddr;
+}
+
 bool beagle_pwm_pinmux_setup(bbb_pwm_pin_t pin_no, BBB_PWMSS pwm_id)
 {
-bool is_valid = true;
+  bool is_valid = true;
+  
   if(pwm_id == BBB_PWMSS0) {
     if (pin_no == BBB_P9_21_0B) {
       REG(AM335X_PADCONF_BASE + AM335X_CONF_SPI0_D0) = BBB_MUXMODE(BBB_P9_21_MUX_PWM);
@@ -107,11 +133,12 @@ bool is_valid = true;
  * @param   instance  It is the instance number of EPWM of pwmsubsystem.
  *
  * @return  true if successful
+ *          false if unsuccessful
  **/
 static bool pwmss_tbclk_enable(BBB_PWMSS instance)
 {
-uint32_t enable_bit;
-bool is_valid = true;
+  uint32_t enable_bit;
+  bool is_valid = true;
   
   if (instance == BBB_PWMSS0)  {
     enable_bit = AM335X_PWMSS_CTRL_PWMSS0_TBCLKEN;
@@ -136,16 +163,18 @@ bool is_valid = true;
  *
  * @param   pwm_id  It is the instance number of EPWM of pwm sub system.
  *
- * @return  None.
+ * @return  true if successful
+ *          false if unsuccessful 
  *
  **/
 static bool pwm_clock_enable(BBB_PWMSS pwm_id)
 {
   const bool id_is_valid = pwm_id < BBB_PWMSS_COUNT;	
   bool status = true;
+  
   if (id_is_valid) {
-    const uint32_t baseAddr = select_pwm(pwm_id);
-    REG(baseAddr - AM335X_EPWM_REGS + AM335X_PWMSS_CLKCONFIG) |= AM335X_PWMSS_CLK_EN_ACK;
+    const uint32_t baseAddr = select_pwmss(pwm_id);
+    REG(baseAddr + AM335X_PWMSS_CLKCONFIG) |= AM335X_PWMSS_CLK_EN_ACK;
   }  else  {
        status = false;
   }
@@ -163,12 +192,13 @@ static bool pwm_clock_enable(BBB_PWMSS pwm_id)
  * 'pwmss_id' can take one of the following values:
  * (0 <= pwmss_id <= 2)
  *
- * @return  None.
- *
+ * @return  True if successful
+ *          False if Unsuccessful 
  */
 static bool pwmss_module_clk_config(BBB_PWMSS pwmss_id)
 {
   bool is_valid = true;
+  
   if(pwmss_id == BBB_PWMSS0) {
     const uint32_t is_functional = AM335X_CM_PER_EPWMSS0_CLKCTRL_IDLEST_FUNC <<
                          AM335X_CM_PER_EPWMSS0_CLKCTRL_IDLEST_SHIFT;
@@ -212,6 +242,7 @@ bool beagle_pwm_init(BBB_PWMSS pwmss_id)
 {
   const bool id_is_valid = pwmss_id < BBB_PWMSS_COUNT;
   bool status = true;
+  
   if(id_is_valid) {
     pwmss_module_clk_config(pwmss_id);
     pwm_clock_enable(pwmss_id);	
@@ -299,6 +330,7 @@ bool beagle_pwm_enable(BBB_PWMSS pwmid)
 {
   const bool id_is_valid = pwmid < BBB_PWMSS_COUNT;
   bool status = true;
+  
   if (id_is_valid)  {
     const uint32_t baseAddr = select_pwm(pwmid);
   /* Initially set EPWMxA o/p high , when increasing counter = CMPA toggle o/p of EPWMxA */
@@ -318,6 +350,7 @@ bool beagle_pwm_disable(BBB_PWMSS pwmid)
 {
   const bool id_is_valid = pwmid < BBB_PWMSS_COUNT;
   bool status = true;
+  
   if (id_is_valid) {
     const uint32_t baseAddr = select_pwm(pwmid);
     REG16(baseAddr + AM335X_EPWM_TBCTL) = AM335X_EPWM_TBCTL_CTRMODE_STOPFREEZE;
@@ -330,64 +363,61 @@ bool beagle_pwm_disable(BBB_PWMSS pwmid)
   return status;
 }
 
-int PWMSS_TB_clock_check(unsigned int PWMSS_ID)
+/**
+ * @brief   This functions determines whether time base clock is enabled for EPWMSS
+ *
+ * @param   pwmss_id  The instance number of ePWMSS whose time base clock need to
+ *                    be checked
+ *                    
+ * @return  returns 4 for PWMSS_ID = 2
+ *          returns 2 for PWMSS_ID = 1
+ *          returns 1 for PWMSS_ID = 0
+ **/ 
+int pwmss_tb_clock_check(unsigned int pwmss_id)
 {
-  unsigned int reg_value,value;
-	
+  unsigned int reg_value;
   /*control module check*/
   reg_value = REG(AM335X_CONTROL_MODULE + AM335X_PWMSS_CTRL);
-	
-  value = reg_value & (1 << PWMSS_ID);
-  printf("\n PWMSS_CTRL =  %d and reg_value = %d \n",value,reg_value);
-  return (reg_value & (1 << PWMSS_ID));
+  printf("\n reg_value %d\n",reg_value);
+  return (reg_value & (1 << pwmss_id));
 }
 
-unsigned int pwm_clock_en_status(unsigned int pwmid)
+/**
+ * @brief   This functions determines whether clock for EPWMSS is enabled or not.
+ *
+ * @param   It is the Memory address of the PWMSS instance used.
+ *
+ * @return  
+ *
+ **/
+unsigned int pwmss_clock_en_status(unsigned int pwmid)
 {
   unsigned int status;
-  const uint32_t baseAddr = select_pwm(pwmid);
+  const uint32_t baseAddr = select_pwmss(pwmid);
   status = REG(baseAddr + AM335X_PWMSS_CLKSTATUS);
 
-  status = status << 0x08;
-  printf("\n status = %d \n",status);
+  status = status >> 8 & 0x1;
   return status;
 }
 
-unsigned int pwm_clock_dis_status(unsigned int pwmid)
+bool beagle_pwmss_is_running(unsigned int pwmss_id)
 {
-    unsigned int status;
-    const uint32_t baseAddr = select_pwm(pwmid);
-    status = REG(baseAddr + AM335X_PWMSS_CLKSTATUS);
-
-    status = status << 0x09;
-    printf("\n Disable status = %d \n",status);
-    return status;
-}
-
-
-/*
-bool beagle_pwmss_is_running(unsigned int pwm_id)
-{
-  const bool id_is_valid = pwm_id < BBB_PWMSS_COUNT;
-  unsigned int reg_value;
-  bool status = true; 
-
+  const bool id_is_valid = pwmss_id < BBB_PWMSS_COUNT;
+  bool status=true;
+  
   if (id_is_valid) {
-      const uint32_t baseAddr = select_pwm(pwm_id);
-      reg_value = REG(baseAddr + AM335X_PWMSS_CLKSTATUS);
-      reg_value = reg_value << 0x08;
-      if(reg_value == 0) {
-      printf("second test value = %d \n",reg_value);
-      status =false;
-      } else { //do nothing
-      }
-      
+    status = pwmss_clock_en_status(pwmss_id);
+    if(status){
+    status = pwmss_tb_clock_check(pwmss_id);
+    } else {
+        status = false;
+    }  
   } else {
   status = false;
   }
   return status;
 }
-*/
+
 #endif
 
 /* For support of BeagleboardxM */
@@ -417,21 +447,11 @@ bool beagle_pwm_pinmux_setup(bbb_pwm_pin_t pin_no, BBB_PWMSS pwm_id)
 {
   return false;
 }
-
-bool beagle_pwmss_is_running(unsigned int pwm_id)
-{
-  return false;
-}
-
-int PWMSS_TB_clock_check(unsigned int PWMSS_ID)
+unsigned int pwmss_clock_en_status(unsigned int pwmid)
 {
 return -1;
 }
-unsigned int pwm_clock_en_status(unsigned int pwmid)
-{
-return -1;
-}
-unsigned int pwm_clock_dis_status(unsigned int pwmid)
+int pwmss_tb_clock_check(unsigned int pwmss_id)
 {
 return -1;
 }
