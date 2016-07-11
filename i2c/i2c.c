@@ -3,7 +3,7 @@
  *
  * @ingroup arm_beagle
  *
- * @brief BeagleBoard I2C bus initialization.
+ * @brief BeagleBoard I2C API support definitions.
  */
 
 /*
