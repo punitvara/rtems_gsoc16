@@ -1,4 +1,22 @@
-Pulse Width Modulation uses system frequency of Beagle Bone Black.
+Pulse Width Modulation subsystem includes EPWM, ECAP , EQEP. There are
+different instances available for each one. For PWM there are three
+different individual EPWM module 0 , 1 and 2. So wherever pwmss word is
+used that affects whole PWM sub system such as EPWM, ECAP and EQEP. This code
+has only implementation Non high resolution PWM module. APIs for high
+resolution PWM has been yet to develop.
+
+For Each EPWM instance, has two PWM channels, e.g. EPWM0 has two channel
+EPWM0A and EPWM0B. If you configure two PWM outputs(e.g. EPWM0A , EPWM0B)
+in the same device, then they *must* be configured with the same frequency.
+Changing frequency on one channel (e.g EPWMxA) will automatically change
+frequency on another channel(e.g. EPWMxB). However, it is possible to set
+different pulse-width/duty cycle to different channel at a time. So always
+set the frequency first and then pulse-width/duty cycle.
+
+For more you can refer :
+http://www.ofitselfso.com/BBBCSIO/Source/PWMPortEnum.cs.html
+ 
+Pulse Width Modulation uses the system frequency of Beagle Bone Black.
 
 System frequency = SYSCLKOUT, that is, CPU clock. TBCLK = SYSCLKOUT(By Default)
 SYCLKOUT = 100 MHz
@@ -7,9 +25,9 @@ Please visit following link to check why SYSCLKDIV = 100MHz:
 https://groups.google.com/forum/#!topic/beagleboard/Ed2J9Txe_E4
 (Refer Technical Reference Manual (TRM) Table 15-41 as well)
 
-To generate different frequencies with help of PWM module , SYSCLKOUT need to be
-scaled down which will act as TBCLK and TBCLK will be base clock for the pwm
-sub system.
+To generate different frequencies with the help of PWM module , SYSCLKOUT
+need to be scaled down, which will act as TBCLK and TBCLK will be base clock
+for the pwm subsystem.
 
 TBCLK = SYSCLKOUT/(HSPCLKDIV * CLKDIV)
 
@@ -23,9 +41,9 @@ TBCLK = SYSCLKOUT/(HSPCLKDIV * CLKDIV)
  TBCTL[CLKDIV]-----            ------TBCTL[HSPCLKDIV]
 
 
-CLKDIV and HSPCLKDIV bits are part of TBCTL register (Refer TRM).
+CLKDIV and HSPCLKDIV bits are part of the TBCTL register (Refer TRM).
 CLKDIV - These bits determine part of the time-base clock prescale value.
-Please use following values of CLKDIV to scale down sysclk respectively
+Please use the following values of CLKDIV to scale down sysclk respectively.
 0h (R/W) = /1 
 1h (R/W) = /2
 2h (R/W) = /4
@@ -46,14 +64,14 @@ Please use following value of HSPCLKDIV to scale down sysclk respectively
 6h (R/W) = /12
 7h (R/W) = /14
 
-For example if you set CLKDIV = 3h and HSPCLKDIV= 2h Then
+For example, if you set CLKDIV = 3h and HSPCLKDIV= 2h Then
 SYSCLKOUT will be divided by (1/8)(1/4). It means SYSCLKOUT/32
 
 How to generate frequency ?
 
 freq = 1/Period
 
-TBPRD register is responsible to generate frequency. These bits determine
+TBPRD register is responsible to generate the frequency. These bits determine
 the period of the time-base counter.
 
 By default TBCLK = SYSCLKOUT = 100 MHz
