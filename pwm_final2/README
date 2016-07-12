@@ -159,6 +159,11 @@ rtems_task Init(
   float duty_A = 20.0f ;          /* 20% Duty cycle for PWM 0_A output */
   const float duty_B = 50.0f ;    /* 50% Duty cycle for PWM 0_B output*/
   
+  /*Note: Always check whether pwmss clocks are enabled or not before configuring PWM*/
+  bool is_running = beagle_pwmss_is_running(BBB_PWMSS2);
+  
+  if(is_running) {
+  
   /*To analyse the two different duty cycle Output should be observed at P8_45 and P8_46 pin number */
   beagle_pwm_configure(BBB_PWMSS0, PWM_HZ ,duty_A , duty_B);
   printf("PWM  enable for 10s ....\n");
@@ -166,9 +171,10 @@ rtems_task Init(
   /*Set Up counter and enable pwm module */
   beagle_pwm_enable(BBB_PWMSS0);
   delay_sec(10);
+  
   /*freeze the counter and disable pwm module*/
   beagle_epwm_disable(BBB_PWMSS0);
-  printf("close\n");
+  }
 }
 
 /* NOTICE: the clock driver is enabled */

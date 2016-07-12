@@ -158,6 +158,19 @@ bool beagle_pwm_disable(BBB_PWMSS pwmid);
  **/
 bool beagle_pwm_pinmux_setup(bbb_pwm_pin_t pin_no, BBB_PWMSS pwm_id);
 
+/**
+ * @brief   This function determines whether PWMSS-wide clocks enabled or not.
+ *
+ * @param   pwmss_id  It is the instance number of PWMSS which clocks need to be
+ *                    checked.
+ * 
+ * @return  true if successful
+ * @return  false if fail
+ *
+ **/
+bool beagle_pwmss_is_running(unsigned int pwmss_id);
+
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
