@@ -3,7 +3,7 @@
  *
  * @ingroup arm_beagle
  *
- * @brief BeagleBoard I2C API support definitions.
+ * @brief BeagleBoard I2C bus initialization.
  */
 
 /*
@@ -15,36 +15,13 @@
  */
 
 #include <bsp/i2c.h>
+#include <cpu/am335x.h>
 
 typedef enum{
   I2C1 = 0,
   I2C2,
   I2C_COUNT
 }bbb_i2c_t;
-
-void beagle_bsp_i2c_init(void)
-{
-  int bus_noi, minor_no;
-  /*Initialize libi2c API library*/
-  rtems_libi2c_initialize();
- 
-/**pre-driver hook
- * Bus registration + Device/Driver Registration 
- * int rtems_libi2c_register_bus (char *name,
-                               rtems_libi2c_bus_t * bus)
- * By default name is /dev/i2c if *name == NULL
- */
-/* bus_no = rtems_libi2c_register_bus(NULL,**) */
-
-/**Device/Driver Registration
- * int
- * rtems_libi2c_register_drv (char *name, rtems_libi2c_drv_t * drvtbl,
-                           unsigned bus, unsigned i2caddr);
- * minor_no = rtems_libi2c_register_drv (NAME,drvtbl,bus_no,ADDR_CONSTANT)
- */
-/*what is drvtbl here ????*/
-
-}
 
 rtems_status_code beagle_i2c_init(rtems_libi2c_bus_t * bushdl)
 {
@@ -93,6 +70,34 @@ static rtems_libi2c_bus_ops_t beagle_ops = {
   .ioctl = beagle_i2c_ioctl
 };
 
+static static rtems_libi2c_drv_t beagle_drv_tbl = {
+  .ops =         &beagle_ops,
+  .size =        sizeof (beagle_drv_tbl),
+};
+
+void beagle_bsp_i2c_init(void)
+{
+  int bus_no, minor_no,i2caddr;
+  /*Initialize libi2c API library*/
+  rtems_libi2c_initialize();
+/*  i2caddr = ADDR_CONST */
+/**pre-driver hook
+ * Bus registration + Device/Driver Registration 
+ * int rtems_libi2c_register_bus (char *name,
+                               rtems_libi2c_bus_t * bus)
+ * By default name is /dev/i2c if *name == NULL
+ */
+/* bus_no = rtems_libi2c_register_bus(NULL,**) */
+  
+
+/**Device/Driver Registration
+ * int
+ * rtems_libi2c_register_drv (char *name, rtems_libi2c_drv_t * drvtbl,
+                           unsigned bus, unsigned i2caddr);
+ * minor_no = rtems_libi2c_register_drv (NAME,drvtbl,bus_no,ADDR_CONSTANT)
+ */
+  minor_no = rtems_libi2c_register_drv (NAME,&beagle_drv_tbl,bus_no,ADDR_CONSTANT);
+}
 /*
 Pin_list 
 P9_17  I2C1_SCL
@@ -126,4 +131,85 @@ void i2c_pinmux(bbb_i2c_t i2c_id)
     status = false;
     }
   return status;
-} 
+}
+
+/* ref. Table 21-4 I2C Clock Signals */
+/* 
+ Interface clock - 100MHz - CORE_LKOUTM4 / 2 - pd_per_l4ls_gclk
+
+ Functional clock - 48MHz - PER_CLKOUTM2 / 4 - pd_per_ic2_fclk
+*/
+void i2c1_i2c2_module_clk_config(bbb_i2c_t i2c_id)
+{
+/*0x2 = SW_WKUP : SW_WKUP: Start a software forced wake-up
+transition on the domain. */
+
+  REG(AM335X_CM_PER_ADDR + AM335X_CM_PER_L4LS_CLKSTCTRL) |=
+			AM335X_CM_PER_L4LS_CLKSTCTRL_CLKTRCTRL_SW_WKUP; 
+  while((REG(AM335X_CM_PER_ADDR + AM335X_CM_PER_L4LS_CLKSTCTRL) &
+			AM335X_CM_PER_L4LS_CLKSTCTRL_CLKTRCTRL) !=
+                        AM335X_CM_PER_L4LS_CLKSTCTRL_CLKTRCTRL_SW_WKUP);
+
+   
+/* 0x2 = ENABLE : Module is explicitly enabled. Interface clock (if not
+used for functions) may be gated according to the clock domain
+state. Functional clocks are guarantied to stay present. As long as in
+this configuration, power domain sleep transition cannot happen.*/
+  REG(AM335X_CM_PER_ADDR + AM335X_CM_PER_L4LS_CLKCTRL) |=
+			AM335X_CM_PER_L4LS_CLKCTRL_MODULEMODE_ENABLE;
+
+  while((REG(AM335X_CM_PER_ADDR + AM335X_CM_PER_L4LS_CLKCTRL) &
+      AM335X_CM_PER_L4LS_CLKCTRL_MODULEMODE) != AM335X_CM_PER_L4LS_CLKCTRL_MODULEMODE_ENABLE);
+
+/*0x2 = ENABLE : Module is explicitly enabled. Interface clock (if not
+used for functions) may be gated according to the clock domain
+state. Functional clocks are guarantied to stay present. As long as in
+this configuration, power domain sleep transition cannot happen.*/
+  if (i2c_id == I2C1) {
+  REG(AM335X_CM_PER_ADDR + AM335X_CM_PER_I2C1_CLKCTRL) |=
+                             AM335X_CM_PER_I2C1_CLKCTRL_MODULEMODE_ENABLE;
+
+  while((REG((AM335X_CM_PER_ADDR + AM335X_CM_PER_I2C1_CLKCTRL) &
+     AM335X_ CM_PER_I2C1_CLKCTRL_MODULEMODE) != AM335X_CM_PER_I2C1_CLKCTRL_MODULEMODE_ENABLE);
+  } else if (i2c_id == I2C2) {
+  REG(AM335X_CM_PER_ADDR + AM335X_CM_PER_I2C2_CLKCTRL) |=
+                             AM335X_CM_PER_I2C2_CLKCTRL_MODULEMODE_ENABLE;
+
+  while((REG((AM335X_CM_PER_ADDR + AM335X_CM_PER_I2C2_CLKCTRL) &
+     AM335X_CM_PER_I2C2_CLKCTRL_MODULEMODE) != AM335X_CM_PER_I2C2_CLKCTRL_MODULEMODE_ENABLE);
+
+  while(!(REG(AM335X_CM_PER_ADDR + AM335X_CM_PER_L4LS_CLKSTCTRL) &
+           (AM335X_CM_PER_L4LS_CLKSTCTRL_CLKACTIVITY_L4LS_GCLK |
+            AM335X_CM_PER_L4LS_CLKSTCTRL_CLKACTIVITY_I2C_FCLK)));
+
+}
+
+static uint32_t select_i2c(bbb_i2c_t i2c_id)
+{
+  uint32_t baseAddr=0;
+
+  if (i2c_id == I2C1) {
+    baseAddr = AM335X_I2C1_BASE;
+  } else if (i2c_id == I2C2) {
+    baseAddr = AM335X_I2C2_BASE;
+  } else {
+    baseAddr = 0;
+  }
+  return baseAddr;
+}
+
+void i2c_module_en_dis(bool status,bbb_i2c_t i2c_id)
+{
+  uint32_t baseAddr = select_i2c(i2c_id);
+  
+  if (status) {
+    /* Bring the I2C module out of reset */
+    REG(baseAddr + AM335X_I2C_CON) |= AM335X_I2C_CON_I2C_EN; 
+  } else {
+    /* Reset I2C module*/
+    REG(baseAddr + AM335X_I2C_CON) &= ~(AM335X_I2C_CON_I2C_EN);
+  }
+
+}
+
+ 
