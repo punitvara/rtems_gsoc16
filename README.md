@@ -1,6 +1,6 @@
-This repo containes my work during Google Summer of Code 2016. You can visit my abstract at official site 
+This repo containes my work during Google Summer of Code 2016.
 
-https://summerofcode.withgoogle.com/projects/#4789581136265216 
+Aim : To develop I2C and PWM driver for beagle bone black in RTEMS project. RTEMS is open source RTOS. 
 
 **Video links for my progress on GSOC'16**
 
@@ -11,6 +11,10 @@ https://www.youtube.com/watch?v=FyOHU02bsvw
 Testing GPIO with LED on P8 Header Pin 12,13,14(Bank 0 ,1)
 
 https://www.youtube.com/watch?v=aYBIJoueGe0 
+
+Testing PWM driver source code 
+
+https://www.youtube.com/watch?v=jhjZO9amdSA
 
 
 [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/punitvara/rtems_gsoc16/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
